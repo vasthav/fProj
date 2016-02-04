@@ -66,7 +66,7 @@ while True:
 			print "No modules"
 		else:
 			for module in modules:
-				print "Module name is", peer.uname
+				print "Module name is", module.moduleName
 				print "Module owner is", module.owner
 				print "Holders : \n"
 				for holder in peer.holderList:
