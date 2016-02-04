@@ -85,9 +85,7 @@ def fileOperations(classSelector, operationSelector, args):
 def responder(aClient, address):
 	while True:
 		packet = aClient.recv(1024)
-		print packet
 		data = pickle.loads(packet)
-		print data[0]
 		if data[0] == 0:
 			print "Received request for registration from", address
 			fileOpStatus = fileOperations("p", "+", (data, address))

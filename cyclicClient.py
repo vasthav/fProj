@@ -51,22 +51,26 @@ while True:
 		peers = pickle.loads(s.recv(1024))
 		if peers == []:
 			print "No peers"
-		for peer in peers:
-			print "Module name is ", peer.uname
-			print "Peer IP is", peer.ip
-			print "Peer port is", peer.port
+		else:
+			for peer in peers:
+				print "Peer name is ", peer.uname
+				print "Peer IP is", peer.ip
+				print "Peer port is", peer.port
 			
 
 	elif inp == 2:	#############	requesting module list
 		print "You've requested modulelist"
 		s.send(preparePacket((2,)))
 		modules = pickle.loads(s.recv(1024))
-		for module in modules:
-			print "Module name is", peer.uname
-			print "Module owner is", module.owner
-			print "Holders : \n"
-			for holder in peer.holderList:
-				print holder, "\n"
+		if modules == []:
+			print "No modules"
+		else:
+			for module in modules:
+				print "Module name is", peer.uname
+				print "Module owner is", module.owner
+				print "Holders : \n"
+				for holder in peer.holderList:
+					print holder, "\n"
 
 	elif inp == 5:	####################	deregistration
 		print "You're deleting your account"
