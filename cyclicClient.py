@@ -37,35 +37,39 @@ while True:
 	uname = None
 	pwd = None
 	inp = None
-	inp = input("Enter 0 for registering, 1 for getting peerlist, 2 for getting modulelist, 5 for deregistering") #temporary menu driver
+	inp = input("\t\t\tMenu\n\n\t\t0 for registering\n\t\t1 for getting peerlist\n\t\t2 for getting modulelist\n\t\t5 for deregistering\n\nEnter your option :\t") #temporary menu driver
 
 	if inp == 0: ###########	registering user
-		uname = raw_input("What would you like your username to be?")
-		pwd = raw_input("Password please")
+		uname = raw_input("What would you like your username to be?\t")
+		pwd = raw_input("Password please\t")
 		s.send(preparePacket((0, uname, pwd)))
 		print s.recv(1024)
 
 	elif inp == 1:	###############	requesting peer list
-		print "You've requested peerlist"
+		print "\nYou've requested peerlist\n"
 		s.send(preparePacket((1,)))
 		peers = pickle.loads(s.recv(1024))
 		if peers == []:
-			print "No peers"
+			print "====================================="
+			print "No peers\n====================================="
 		else:
 			for peer in peers:
+				print "------------------------------"
 				print "Peer name is ", peer.uname
 				print "Peer IP is", peer.ip
 				print "Peer port is", peer.port
 			
 
 	elif inp == 2:	#############	requesting module list
-		print "You've requested modulelist"
+		print "\nYou've requested modulelist\n"
 		s.send(preparePacket((2,)))
 		modules = pickle.loads(s.recv(1024))
 		if modules == []:
-			print "No modules"
+			print "====================================="
+			print "No modules listed\n====================================="
 		else:
 			for module in modules:
+				print "------------------------------"
 				print "Module name is", module.moduleName
 				print "Module owner is", module.owner
 				print "Holders : \n"
@@ -73,8 +77,8 @@ while True:
 					print holder, "\n"
 
 	elif inp == 5:	####################	deregistration
-		print "You're deleting your account"
-		uname = raw_input("Re enter your username")
-		pwd = raw_input("Re enter your password")
+		print "You're deleting your account\n"
+		uname = raw_input("Re enter your username\t")
+		pwd = raw_input("Re enter your password\t")
 		s.send(preparePacket((5, uname, pwd)))
 		print s.recv(1024)
