@@ -2,16 +2,16 @@ import socket
 import time
 import pickle
 
-#############################data classes
+##########################data classes
 
 class Peer(object):
 	def __init__(self, uname, pwd, ip, port, status):
+		self.uname = uname
+		self.pwd = pwd
 		self.ip = ip
 		self.port = port
 
-s = socket.socket()
-host = socket.gethostname()
-port = 12345
+
 
 class ModuleHolders(object):
 	def __init__(self, moduleName, owner):
@@ -27,6 +27,9 @@ class ModuleHolders(object):
 
 ##########################################
 
+s = socket.socket()
+host = socket.gethostname()
+port = 12345
 s.connect((host, port))
 
 def preparePacket(data):  #serializes data and prepares packet
