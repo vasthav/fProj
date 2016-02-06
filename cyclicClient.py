@@ -40,15 +40,15 @@ while True:
 	uname = None
 	pwd = None
 	inp = None
-	inp = input("\t\t\tMenu\n\n\t\t0 for registering\n\t\t1 for getting peerlist\n\t\t2 for getting modulelist\n\t\t5 for deregistering\n\nEnter your option :\t") #temporary menu driver
+	inp = raw_input("\t\t\tMenu\n\n\t\t0 for registering\n\t\t1 for getting peerlist\n\t\t2 for getting modulelist\n\t\t5 for deregistering\n\nEnter your option :\t") #temporary menu driver
 
-	if inp == 0: ###########	registering user
+	if inp == '0': ###########	registering user
 		uname = raw_input("What would you like your username to be?\t")
 		pwd = raw_input("Password please\t")
 		s.send(preparePacket((0, uname, pwd)))
 		print s.recv(1024)
 
-	elif inp == 1:	###############	requesting peer list
+	elif inp == '1':	###############	requesting peer list
 		print "\nYou've requested peerlist\n"
 		s.send(preparePacket((1,)))
 		peers = pickle.loads(s.recv(1024))
@@ -63,7 +63,7 @@ while True:
 				print "Peer port is", peer.port
 			
 
-	elif inp == 2:	#############	requesting module list
+	elif inp == '2':	#############	requesting module list
 		print "\nYou've requested modulelist\n"
 		s.send(preparePacket((2,)))
 		modules = pickle.loads(s.recv(1024))
@@ -79,9 +79,13 @@ while True:
 				for holder in peer.holderList:
 					print holder, "\n"
 
-	elif inp == 5:	####################	deregistration
+	elif inp == '5':	####################	deregistration
 		print "You're deleting your account\n"
 		uname = raw_input("Re enter your username\t")
 		pwd = raw_input("Re enter your password\t")
 		s.send(preparePacket((5, uname, pwd)))
 		print s.recv(1024)
+
+	else:
+		print "-------------------------------"
+		print "Invalid option.\n-------------------------------"
