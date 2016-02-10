@@ -2,7 +2,12 @@
 
 Currently in P2P platform development stage.
 
-Server stores peer list and list of modules in peerlist.dat and modulelist.dat respectively.
-Currently working till peer list manipulation and module list retrieval from server.
+Server stores peer list and list of modules in "peerlist.dat" and "modulelist.dat" respectively. These files have not been included in the repository.
 
-Now working on module details manipulation and file transfer.
+Currently working :
+ - Peer list manipulation 
+ - Module list retrieval from server.
+
+Now working on :
+ - Completion of module list manipulation
+ - File transfer
