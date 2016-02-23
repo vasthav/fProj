@@ -1,6 +1,7 @@
 import os
 import pickle
 import socket
+import getpass
 
 def initialize():
 	print("Client is starting up.....")
@@ -17,7 +18,8 @@ def setup():
 	clientPort = input("Please enter client port no : ")
 	settings = Settings(socket.gethostbyaddr(serverIP)[0], clientPort)
 	with open("settings", "wb") as output:
-		pickle.dump(settings, output, pickle.HIGHEST_PROTOCOL)
+		# pickle.dump(settings, output, pickle.HIGHEST_PROTOCOL)
+		pickle.dump(settings, output)
 		output.close()
 
 class Settings:
@@ -52,9 +54,24 @@ def clientOperation(settings):
 	except ConnectionError:
 		print("Failed to connect to server")
 
+def recvfile(fname):
+	with open(fname, 'wb') as f:
+    print 'file opened'
+    while True:
+        #print('receiving data...')
+        data = s.recv(1024)
+        print('data=%s', (data))
+        if not data:
+            f.close()
+            print 'file close()'
+            break
+        # write data to a file
+        f.write(data)
+
 def login(serverHandleSocket, settings):
 	uname = input("Enter your username : ")
-	pwd = input("Enter your password : ")
+	# pwd = input("Enter your password : ")
+	pwd = getpass.getpass("Enter your password : ")
 	loginDetails = {"category" : "login", "uname" : uname, "pwd" : pwd, "listeningPort" : settings.clientPort}
 	loginPacket = pickle.dumps(loginDetails)
 	serverHandleSocket.send(loginPacket)

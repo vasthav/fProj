@@ -48,8 +48,8 @@ def uname_exits(fname, uname):
 	with open(fname, 'rb') as fd:
 		while 1:
 			try:
-				s = pickle.load(fd)
-				if s[0] == uname:
+				cmd = pickle.load(fd)
+				if cmd["uname"] == uname:
 					return 1
 			except (EOFError):
 				return 0
@@ -61,8 +61,8 @@ def getpass(fname, uname):
 		while 1:
 			try:
 				s = pickle.load(fd)
-				if s[0] == uname:
-					return s[1]
+				if s["uname"] == uname:
+					return s["pwd"]
 			except (EOFError):
 				return None
 				break
@@ -72,8 +72,8 @@ def getip(fname, uname):
 		while 1:
 			try:
 				s = pickle.load(fd)
-				if s[0] == uname:
-					return s[2]
+				if s["uname"] == uname:
+					return s[""]
 			except (EOFError):
 				return None
 				break
@@ -84,8 +84,8 @@ def getport(fname, uname):
 		while 1:
 			try:
 				s = pickle.load(fd)
-				if s[0] == uname:
-					return s[3]
+				if s["uname"] == uname:
+					return s["listeningPort"]
 			except (EOFError):
 				return None
 				break
