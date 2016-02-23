@@ -41,7 +41,7 @@ def clientOperation(settings):
 			while True:
 				mode = input("Please enter 1 for performing computation or 2 for volunteering in a computation. ")
 				if mode == '1':
-					perform(settings)
+					perform(settings, serverHandleSocket, peerHandleSocket)
 				elif mode == '2':
 					responder(peerHandleSocket)
 				else:
@@ -55,7 +55,7 @@ def clientOperation(settings):
 def login(serverHandleSocket, settings):
 	uname = input("Enter your username : ")
 	pwd = input("Enter your password : ")
-	loginDetails = {"uname" : uname, "pwd" : pwd, "listeningPort" : settings.clientPort}
+	loginDetails = {"category" : "login", "uname" : uname, "pwd" : pwd, "listeningPort" : settings.clientPort}
 	loginPacket = pickle.dumps(loginDetails)
 	serverHandleSocket.send(loginPacket)
 	serverack = serverHandleSocket.recv(1024)
@@ -65,7 +65,11 @@ def login(serverHandleSocket, settings):
 	else:
 		return 0
 
-def perform(settings):
+def perform(settings, serverHandleSocket, peerHandleSocket):
+	requestPeerListPacket = pickle.dumps({"category" : "message", "content" : "getpeerlist"})
+	serverHandleSocket.send(requestPeerListPacket)
+	serverReply = serverHandleSocket.recv(1024)
+	print(pickle.loads(serverReply))
 	print("Performing computation")
 
 def responder(peerHandleSocket):
