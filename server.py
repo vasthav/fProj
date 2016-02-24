@@ -41,7 +41,7 @@ class Server:
 
                 if s == self.server:
                     # handle the server socket
-                    c = Client(self.server.accept())
+                    c = peer(self.server.accept())
                     c.start()
                     self.threads.append(c)
 
@@ -54,13 +54,14 @@ class Server:
         for c in self.threads:
             c.join()
 
-class Client(threading.Thread):
-    # def __init__(self, (client,address)):
+class peer(threading.Thread):
+    # def __init__(self, (peer,address)):
     def __init__(self, aval):
         threading.Thread.__init__(self)
-        self.client = aval[0] #client
+        self.peer = aval[0] #peer
         self.address = aval[1] #address
         self.size = 1024
+        print("Got connetion form : ", self.address[0],":", self.address[1])
 
     def authenticate(self, cmd, n):
         if n == 0:
@@ -85,15 +86,15 @@ class Client(threading.Thread):
         try:
             f = open(fname,'rb')
             while True:
-                print("sending file...")
+                # print("sending file...")
                 l = f.read(1024)
                 while (l):
-                    self.client.send(l)
-                    print('Sent ', l)
+                    self.peer.send(l)
+                    # print('Sent ', l)
                     l = f.read(1024)
                 if not l:
                     print("completed")
-                    self.client.send(pickle.dumps("CLOSEEOF"))
+                    self.peer.send(pickle.dumps("CLOSEEOF"))
                     f.close()
                     break
         except IOError:
@@ -102,7 +103,7 @@ class Client(threading.Thread):
 
 
     def command_handler(self):
-        cmd = pickle.loads(self.client.recv(self.size))
+        cmd = pickle.loads(self.peer.recv(self.size))
         pprint(cmd)
         if cmd["category"] == "login":
             rval = self.authenticate(cmd, 0)
@@ -110,13 +111,13 @@ class Client(threading.Thread):
                 print("Login successful.")
                 d = {"uname":cmd["uname"], "status":"ok"}
                 ackdata = pickle.dumps(d)
-                self.client.send(ackdata)
+                self.peer.send(ackdata)
             else:
                 print("Login failed.")
                 d = {"uname":cmd["uname"], "status":"notok"}
                 ackdata = pickle.dumps(d)
-                self.client.send(ackdata)
-                # self.client.close()
+                self.peer.send(ackdata)
+                # self.peer.close()
 
         elif cmd["category"] == "create":
             rval = self.authenticate(cmd, 1)
@@ -124,22 +125,23 @@ class Client(threading.Thread):
                 print("Account created successful.")
                 d = {"uname":cmd["uname"], "status":"ok"}
                 ackdata = pickle.dumps(d)
-                self.client.send(ackdata)
+                self.peer.send(ackdata)
             else:
                 print("Account creation failed.")
                 d = {"uname":cmd["uname"], "status":"notok"}
                 ackdata = pickle.dumps(d)
-                self.client.send(ackdata)
-                # self.client.close()
+                self.peer.send(ackdata)
+                # self.peer.close()
 
         elif cmd["category"] == "message":
             if cmd["content"] == "getpeerlist":
-                print("sending file")
+                print("sending file...")
                 self.sendfile("peerlist")
 
         elif cmd["category"] == "message":
             if cmd["content"] == "getmodlist":
-                pass #sendfile("modlist")
+                print("sending file...")
+                self.sendfile("modlist")
 
 
 
@@ -147,9 +149,10 @@ class Client(threading.Thread):
         running = 1
         while running:
             self.command_handler()
-            # data = self.client.recv(self.size)
+            # data = self.peer.recv(self.size)
 
 
 if __name__ == "__main__":
+    print("Server UP and running...")
     s = Server()
     s.run() 

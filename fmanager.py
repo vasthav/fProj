@@ -2,6 +2,7 @@ import pickle
 from pprint import pprint
 
 def show(fname):
+	print("--------------------------------------------------------------")
 	with open(fname, 'rb') as fd:
 		while 1:
 			try:
@@ -9,6 +10,7 @@ def show(fname):
 				pprint(s)
 			except (EOFError):
 				break
+	print("--------------------------------------------------------------")
 
 def insfunc(fname, insob):
 	with open(fname, 'ab') as fd:
