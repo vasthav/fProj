@@ -2,6 +2,7 @@ import os
 import pickle
 import socket
 import getpass
+import fmanager
 
 def initialize():
 	print("Client is starting up.....")
@@ -41,7 +42,7 @@ def clientOperation(settings):
 		serverHandleSocket.connect((settings.host, 12345))
 		if login(serverHandleSocket, settings) == 1:
 			while True:
-				mode = input("Please enter 1 for performing computation or 2 for volunteering in a computation. ")
+				mode = input("Please enter 1 for performing computation or\n 2 for volunteering in a computation. ")
 				if mode == '1':
 					perform(settings, serverHandleSocket, peerHandleSocket)
 				elif mode == '2':
@@ -54,19 +55,24 @@ def clientOperation(settings):
 	except ConnectionError:
 		print("Failed to connect to server")
 
-def recvfile(fname):
+def recvfile(serverHandleSocket, fname):
 	with open(fname, 'wb') as f:
-    print 'file opened'
-    while True:
-        #print('receiving data...')
-        data = s.recv(1024)
-        print('data=%s', (data))
-        if not data:
-            f.close()
-            print 'file close()'
-            break
-        # write data to a file
-        f.write(data)
+	    print("file opened", f)
+	    while True:
+	        print('receiving data...')
+	        data = serverHandleSocket.recv(1024)
+	        print('data=%s', (data))
+	        if not data:
+	            f.close()
+	            print("file close()")
+	            break
+	        dat = pickle.loads(data)
+	       	if dat == "CLOSEEOF":
+	            f.close()
+	            print("file close()")
+	            break
+	        # write data to a file
+	        f.write(data)
 
 def login(serverHandleSocket, settings):
 	uname = input("Enter your username : ")
@@ -85,8 +91,10 @@ def login(serverHandleSocket, settings):
 def perform(settings, serverHandleSocket, peerHandleSocket):
 	requestPeerListPacket = pickle.dumps({"category" : "message", "content" : "getpeerlist"})
 	serverHandleSocket.send(requestPeerListPacket)
-	serverReply = serverHandleSocket.recv(1024)
-	print(pickle.loads(serverReply))
+	# serverReply = serverHandleSocket.recv(1024)
+	recvfile(serverHandleSocket, "inputfile")
+	fmanager.show("inputfile")
+	# print(pickle.loads(serverReply))
 	print("Performing computation")
 
 def responder(peerHandleSocket):

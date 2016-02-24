@@ -82,21 +82,28 @@ class Client(threading.Thread):
         # return uname  
         
     def sendfile(self, fname):
-        f = open(fname,'rb')
-        while True:
-            l = f.read(1024)
-            while (l):
-                self.sock.send(l)
-                #print('Sent ',repr(l))
+        try:
+            f = open(fname,'rb')
+            while True:
+                print("sending file...")
                 l = f.read(1024)
-            if not l:
-                f.close()
-                self.sock.close()
-                break
+                while (l):
+                    self.client.send(l)
+                    print('Sent ', l)
+                    l = f.read(1024)
+                if not l:
+                    print("completed")
+                    self.client.send(pickle.dumps("CLOSEEOF"))
+                    f.close()
+                    break
+        except IOError:
+            print("file doent exits.")
+            
 
 
     def command_handler(self):
         cmd = pickle.loads(self.client.recv(self.size))
+        pprint(cmd)
         if cmd["category"] == "login":
             rval = self.authenticate(cmd, 0)
             if rval == 1:
@@ -126,11 +133,12 @@ class Client(threading.Thread):
                 # self.client.close()
 
         elif cmd["category"] == "message":
-            if cmd["content"] == "peerlist":
-                pass #sendfile("peerlist")
+            if cmd["content"] == "getpeerlist":
+                print("sending file")
+                self.sendfile("peerlist")
 
         elif cmd["category"] == "message":
-            if cmd["content"] == "modlist":
+            if cmd["content"] == "getmodlist":
                 pass #sendfile("modlist")
 
 
