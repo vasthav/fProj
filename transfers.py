@@ -1,6 +1,7 @@
 # module for transferring files - sizes upto 4GB
 # call sender and receiver only
 # recvall is an internal function to mirror sendall
+import struct
 
 def sender(sock, data):
 	fileSize = len(data)
