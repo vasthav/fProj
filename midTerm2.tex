@@ -1,0 +1,57 @@
+\documentclass[a4paper,11pt,twocolumn]{article}
+\usepackage[top=1.2in, bottom=1in, left=1.4in, right=1.4in]{geometry}
+\usepackage{textcomp}
+\usepackage{url}
+\usepackage{graphicx}
+\title{Software Platform for Volunteered Computing using P2P\\ {\normalsize CS4099 Project\\Midterm Report}}
+\author{K C Sreevasthavan [ B120115CS ]\\ Giridhar G Nair [ B120532CS ]\\ Irfan T Naushad [ B120194CS ]\\\textbf{Guided By:} Dr. Priya Chandran}
+\begin{document}
+\maketitle
+\section{Introduction}
+Currently, volunteered distributed computing projects like \textbf{SETI} and Stanford\textquotesingle s \textbf{folding@home} are tailor-made for their particular areas. Our aim is to create a common software platform for volunteered computing using peer to peer communication which can be used across different topics, by providing the facility to add modules for computational problems belonging to different areas.
+\section{Problem Statement}
+To implement a software platform for computing that uses P2P for communication / data-sharing between volunteering nodes.
+\section{Literature Survey }
+Various P2P frameworks were considered such as \cite{kurin} \cite{chen} \cite{twisted}. Official python documentation \cite{python} is being used as reference for development.
+\section{Work Done in the previous semester}
+\paragraph{}
+The last semester was occupied with the designing of the software platform. Initially, the idea was to base the software platform on an existing P2P framework. Several options were looked into, such as Kurin's \textbf{PyP2P}, Samuel Chen's \textbf{P2Python} and the \textbf{Twisted} framework. The stack would consist of an interface layer (to interact with and manage the computational modules), and a communication layer that would drive the P2P platform selected.
+\paragraph{}
+\includegraphics[scale=0.5]{oldStack}
+\paragraph{}
+The actors in this computational system fall into two categories : \textbf{peers} and \textbf{trackers}. Peers are run by individuals in need of performing computational tasks or desiring to volunteer for other projects. Peers run computational modules, and transfer input and processed data among themselves. Modules can also be downloaded from peers who possess it. Trackers are hosts that maintain a list of peers online, their status : whether they are available or not; and a list of available modules and the peers which possess them. They do not take part in any computation.
+\paragraph{}
+\includegraphics[scale=0.4]{layout}
+\paragraph{}
+A peer, on coming online, would immediately notify the tracker of its status and upload an up to date list of all its modules. The user can then choose to start his/her own computation project or volunteer in another project. If the user selects the former, the peer would download the list of peers from the tracker and send them a request to volunteer in the computation. It would then send the input data to those who have agreed to participate.
+\paragraph{}
+In case a peer requires a module either for initiating a new computation problem or to volunteer in another, it would first download the module catalog from the tracker and then proceed to request each peer that has been listed as possessing the module until it manages to download it.
+\section{Work Done in the current semester}
+\paragraph{}
+The search for a suitable P2P framework was not successful. All the options considered are not being maintained currently or are complex standalone applications etc;  they are either not functional or do not meet the requirements. Hence it was decided to develop a simple variant that was tailor-made to our needs.
+\paragraph{}
+\includegraphics[scale=0.5]{newStack}
+\paragraph{}
+The implementation begins from the P2P layer. The communication and P2P layer have been unified into a single layer to be driven by the interface layer. The various peer functions are temporarily being menu driven for demonstration purposes. These will be automated on completion of the software platform.
+\paragraph{}
+The tracker has been near finalized and performs all intended functions. The entire project is being developed in Python 3.x. 
+\paragraph{}
+The code is being maintained at the Github repository for the project : \url{https://github.com/GiridharGNair/fProj} . 
+\paragraph{}
+The script ``peer.py" forms the base for the software to be run on the various non-tracking nodes. It is the combined implementation of the communication and P2P layer. It handles the basic functionality such as retrieving peer list, updating and retrieving module list and file transfers.
+\paragraph{}
+The file ``tracker.py" is to be run on the tracking nodes. It keeps track of the various peers and their statuses in ``peerlist" and also the various modules available and their holders in ``modulelist". It serves and updates this data for the peers.
+\section{Future Work and Conclusions}
+Pending work includes implementation of the interface layer and ensuring the overall integrity of the software platform. The interface layer would consist of a standalone application (which would be run by the peers) and a package which would be imported by module developers in order to harness platform functionality.
+
+\begin{thebibliography}{}
+\bibitem{kurin}
+Kurin's Py-P2P \url{https://github.com/kurin/py-p2p}, Toby Burress.
+\bibitem{chen}
+P2Python \url{https://github.com/samuelchen/P2Python}, Samuel Chen.
+\bibitem{twisted}
+Twisted Event Driven Networking Engine \url{https://twistedmatrix.com/trac/}, Twisted Matrix Labs.
+\bibitem{python}
+Python 3.5.1 Tutorial \url{https://docs.python.org/3/tutorial/} Python Software Foundation.
+\end{thebibliography}{}
+\end{document}
