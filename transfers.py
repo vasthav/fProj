@@ -5,14 +5,14 @@ import struct
 
 def sender(sock, data):
 	fileSize = len(data)
-	print("File size is "+str(fileSize))
+	#print("File size is "+str(fileSize))
 	sock.sendall(struct.pack('!I', fileSize))
 	sock.sendall(data)
 
 def receiver(sock):
 	lengthbuf = recvall(sock, 4)
 	length, = struct.unpack('!I', lengthbuf)
-	print(str(length))
+	#print(str(length))
 	return recvall(sock, length)
 
 def recvall(sock, count):
