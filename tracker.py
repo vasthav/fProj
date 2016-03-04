@@ -5,9 +5,10 @@ import socket
 import sys
 import threading
 import pickle
-import fmanager
+import old.fmanager
 import os
 from pprint import pprint
+import transfer
 
 class Server:
     def __init__(self):
@@ -45,11 +46,6 @@ class Server:
                     c.start()
                     self.threads.append(c)
 
-                # elif s == sys.stdin:
-                #     # handle standard input
-                #     junk = sys.stdin.readline()
-                #     running = 0
-        # close all threads
         self.server.close()
         for c in self.threads:
             c.join()
@@ -61,65 +57,54 @@ class peer(threading.Thread):
         self.peer = aval[0] #peer
         self.address = aval[1] #address
         self.size = 1024
+        self.uname = None
         print("Got connetion form : ", self.address[0],":", self.address[1])
 
     def authenticate(self, cmd, n):
         if n == 0:
-            if fmanager.uname_exits("peerlist", cmd["uname"]) == 1:
-                if cmd["pwd"] == fmanager.getpass("peerlist", cmd["uname"]):
+            if old.fmanager.uname_exits("peerlist", cmd["uname"]) == 1:
+                if cmd["pwd"] == old.fmanager.getpass("peerlist", cmd["uname"]):
+                    self.uname = cmd["uname"]
                     return 1
             else: 
                 return 0
 
         if n == 1:
-            if fmanager.uname_exits("peerlist", cmd["uname"]) == 0:
+            if old.fmanager.uname_exits("peerlist", cmd["uname"]) == 0:
                 val = cmd
-                dat = val.pop("category")
+                dat = val.pop("type")
                 pprint(dat)
-                fmanager.insfunc("peerlist", dat)
+                old.fmanager.insfunc("peerlist", dat)
                 return 1
             else:
                 return 0
         # return uname  
         
-    def sendfile(self, fname):
-        try:
-            f = open(fname,'rb')
-            while True:
-                # print("sending file...")
-                l = f.read(1024)
-                while (l):
-                    self.peer.send(l)
-                    # print('Sent ', l)
-                    l = f.read(1024)
-                if not l:
-                    print("completed")
-                    self.peer.send(pickle.dumps("CLOSEEOF"))
-                    f.close()
-                    break
-        except IOError:
-            print("file doent exits.")
-            
-
-
     def command_handler(self):
-        cmd = pickle.loads(self.peer.recv(self.size))
+        # cmd = pickle.loads(self.peer.recv(self.size))
+        cmd = pickle.loads(transfer.receiver(self.peer))
         pprint(cmd)
-        if cmd["category"] == "login":
+        if cmd["type"] == "login":
             rval = self.authenticate(cmd, 0)
             if rval == 1:
                 print("Login successful.")
-                d = {"uname":cmd["uname"], "status":"ok"}
+                d = {"type":"rlogin", "content":"yes"}
                 ackdata = pickle.dumps(d)
-                self.peer.send(ackdata)
+                transfer.sender(self.peer, ackdata)
+                reply = pickle.loads(transfer.receiver(self.peer))
+                print(self.uname, "has modulelist: ")
+                pprint(reply["content"])
+
             else:
                 print("Login failed.")
-                d = {"uname":cmd["uname"], "status":"notok"}
+                d = {"type":"rlogin", "status":"no"}
                 ackdata = pickle.dumps(d)
-                self.peer.send(ackdata)
-                # self.peer.close()
+                transfer.sender(self.peer, ackdata)
+                reply = pickle.loads(transfer.receiver(self.peer))
+                print("modulelist: ")
+                pprint(reply)
 
-        elif cmd["category"] == "create":
+        elif cmd["type"] == "create":
             rval = self.authenticate(cmd, 1)
             if rval == 1:
                 print("Account created successful.")
@@ -133,15 +118,16 @@ class peer(threading.Thread):
                 self.peer.send(ackdata)
                 # self.peer.close()
 
-        elif cmd["category"] == "message":
-            if cmd["content"] == "getpeerlist":
-                print("sending file...")
-                self.sendfile("peerlist")
+        elif cmd["type"] == "get":
+            if cmd["content"] == "peerlist":
+                print("sending peerlist file...")
+                transfer.send_file(self.peer, "peerlist")
+                print("Done!")
 
-        elif cmd["category"] == "message":
-            if cmd["content"] == "getmodlist":
-                print("sending file...")
-                self.sendfile("modlist")
+            elif cmd["content"] == "modlist":
+                print("sending modulelist file...")
+                transfer.send_file(self.peer, "modulelist")
+                print("Done!")
 
 
 
