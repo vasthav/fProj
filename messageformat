@@ -13,6 +13,9 @@
 # File transfer - modlist download request
 {"type":"get", "content":"modlist"}
 
+# sending the details of the modules present 
+{"type":"peerinfo", "content":"modulelist", "modlist":(set of module names) }
+
 # Module request message
 {"type":"get", "content":"module", "modname":"modulename"}
 
