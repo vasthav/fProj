@@ -3,6 +3,16 @@
 # recvall is an internal function to mirror sendall
 import struct
 
+def send_file(sock, fileName):
+	with open(fileName, "rb") as inFile:
+		data =  inFile.read()
+		sender
+
+def recv_file(sock, fileName):
+	with open(fileName, "wb") as output:
+		writeData = receiver(sock)
+		output.write(writeData)
+
 def sender(sock, data):
 	fileSize = len(data)
 	#print("File size is "+str(fileSize))
