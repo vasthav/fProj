@@ -34,7 +34,7 @@
 {"type":"rlogin", "content":"yes/no"}
 
 # signup response message
-{"type":"rsignup", "content":"yes/no"}
+{"type":"rsignup", "content":"yes/no/exists"}
 
 # file transfer response message
 {"type":"rget", "response":"yes/no"}

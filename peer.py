@@ -51,35 +51,52 @@ def peerFunctionality(settings):
 				print("Logging in.....")
 				msg = {"type" : "login", "uname" : uname, "pwd" :pwd, "port":settings["peerPort"], "status": "active"}
 				transfer.sender(trackerSock, pickle.dumps(msg))
+				print("waiting for response...")
 				reply = pickle.loads(transfer.receiver(trackerSock))
-	
+				pprint(reply)
 				if reply["type"] == "rlogin" and reply["content"] == "yes":
 					print("Login successful.")
 					listofmodules = pickle.loads(readFile("modulelist"))
 					msg = {"type" : "modulelist", "content" : listofmodules}
 					transfer.sender(trackerSock, pickle.dumps(msg))
 					break
-				else:
-					print("Login failed.")
-					if reply["type"] == "message" and reply["content"] == "auth no acc":
-						print("Please check your username. No account exists under given name.")
-					if reply["type"] == "message" and reply["content"] == "auth wrong pwd":
-						print("Incorrect password. Please try again.")
+				elif reply["type"] == "rlogin" and reply["content"] == "no":
+					print("Login failed. Please check your username or password and try again.")
+										
 	
 			# if signup selected
 			elif select == "2":
-				while(1):
-					"""uname = input("Enter desired username : ")
-					pwd = getpass.getpass("Enter desired password : ")
-					rpwd = getpass.getpass("Re enter password : ") 
-					"""	
+				# if(i == 0):
+				# 	print("Please try again later. Exiting.")
+				# 	sys.exit(0)
+				# i = i - 1
+				uname = input("Enter desired username : ")
+				pwd = getpass.getpass("Enter desired password : ")
 				print("Creating account")
-				break
+
+				msg = {"type" : "signup", "uname" : uname, "pwd" :pwd, "port":settings["peerPort"], "status": "active"}
+				transfer.sender(trackerSock, pickle.dumps(msg))
+				reply = pickle.loads(transfer.receiver(trackerSock))
+
+				if reply["type"] == "rsignup" and reply["content"] == "yes":
+					print("Login successful.")
+					listofmodules = pickle.loads(readFile("modulelist"))
+					msg = {"type" : "modulelist", "content" : listofmodules}
+					transfer.sender(trackerSock, pickle.dumps(msg))
+					break
+				elif reply["type"] == "rsignup" and reply["content"] == "no":
+					print("Login failed. Please check your username or password and try again.")
+				elif reply["type"] == "rsignup" and reply["content"] == "exists":
+					print("The username already exists. Try a better one.")						
+
+			# if Exit selected
 			elif select == "3":
 				sys.exit(0)
 			else:
+			# something else
 				print("Invalid option....")
 
+		# the next menu
 		while(1):
 			select = input("\nTemp Menu\n\n\t1 Get peer list\n\t2 Get module list\n\t3 Exit\n\nYour option : ")
 			

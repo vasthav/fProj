@@ -5,7 +5,7 @@ import socket
 import sys
 import threading
 import pickle
-import old.fmanager
+import util
 import os
 from pprint import pprint
 import transfer
@@ -62,30 +62,30 @@ class peer(threading.Thread):
 
     def authenticate(self, cmd, n):
         if n == 0:
-            if old.fmanager.uname_exits("peerlist", cmd["uname"]) == 1:
-                if cmd["pwd"] == old.fmanager.getpass("peerlist", cmd["uname"]):
+            if util.uname_exits("peerlist", cmd["uname"]) == 1:
+                if cmd["pwd"] == util.getpass("peerlist", cmd["uname"]):
                     self.uname = cmd["uname"]
                     return 1
             else: 
                 return 0
 
         if n == 1:
-            if old.fmanager.uname_exits("peerlist", cmd["uname"]) == 0:
-                val = cmd
-                dat = val.pop("type")
-                pprint(dat)
-                old.fmanager.insfunc("peerlist", dat)
+            if util.uname_exits("peerlist", cmd["uname"]) == 0:
+                d = {"uname":cmd["uname"], "pwd":cmd["pwd"], "port":cmd["port"], "status":"active"}
+                util.insfunc("peerlist", d)
                 return 1
             else:
-                return 0
+                return 2
         # return uname  
         
     def command_handler(self):
         # cmd = pickle.loads(self.peer.recv(self.size))
         cmd = pickle.loads(transfer.receiver(self.peer))
+        print("request recieved: ")
         pprint(cmd)
         if cmd["type"] == "login":
             rval = self.authenticate(cmd, 0)
+            print("rval : .. ", rval)
             if rval == 1:
                 print("Login successful.")
                 d = {"type":"rlogin", "content":"yes"}
@@ -97,26 +97,32 @@ class peer(threading.Thread):
 
             else:
                 print("Login failed.")
-                d = {"type":"rlogin", "status":"no"}
+                d = {"type":"rlogin", "content":"no"}
+                ackdata = pickle.dumps(d)
+                transfer.sender(self.peer, ackdata)
+
+        elif cmd["type"] == "signup":
+            rval = self.authenticate(cmd, 1)
+            print("authenticated : ", rval)
+            if rval == 1:
+                print("Account created successful.")
+                d = {"type":"rsignup", "content":"yes"}
+                ackdata = pickle.dumps(d)
+                transfer.sender(self.peer, ackdata)
+                # reply = pickle.loads(transfer.receiver(self.peer))
+            elif rval == 2:
+                print("Username already exists.")
+                d = {"type":"rsignup", "content":"exists"}
                 ackdata = pickle.dumps(d)
                 transfer.sender(self.peer, ackdata)
                 reply = pickle.loads(transfer.receiver(self.peer))
-                print("modulelist: ")
-                pprint(reply)
 
-        elif cmd["type"] == "create":
-            rval = self.authenticate(cmd, 1)
-            if rval == 1:
-                print("Account created successful.")
-                d = {"uname":cmd["uname"], "status":"ok"}
-                ackdata = pickle.dumps(d)
-                self.peer.send(ackdata)
-            else:
+            elif rval == 0:
                 print("Account creation failed.")
-                d = {"uname":cmd["uname"], "status":"notok"}
+                d = {"type":"rsignup", "content":"no"}
                 ackdata = pickle.dumps(d)
-                self.peer.send(ackdata)
-                # self.peer.close()
+                transfer.sender(self.peer, ackdata)
+                reply = pickle.loads(transfer.receiver(self.peer))
 
         elif cmd["type"] == "get":
             if cmd["content"] == "peerlist":
