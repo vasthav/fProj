@@ -71,8 +71,9 @@ class peer(threading.Thread):
 
         if n == 1:
             if util.uname_exits("peerlist", cmd["uname"]) == 0:
-                d = {"uname":cmd["uname"], "pwd":cmd["pwd"], "port":cmd["port"], "status":"active"}
+                d = {"uname":cmd["uname"], "pwd":cmd["pwd"], "ip": self.address[0], "port":cmd["port"], "status":"active"}
                 util.insfunc("peerlist", d)
+                self.uname = cmd["uname"]
                 return 1
             else:
                 return 2
@@ -92,14 +93,18 @@ class peer(threading.Thread):
                 ackdata = pickle.dumps(d)
                 transfer.sender(self.peer, ackdata)
                 reply = pickle.loads(transfer.receiver(self.peer))
+                pprint(reply)
                 print(self.uname, "has modulelist: ")
-                pprint(reply["content"])
+                pprint(reply["modlist"])
+                util.modupdate(reply, self.uname, "modulelist")
+                
 
             else:
                 print("Login failed.")
                 d = {"type":"rlogin", "content":"no"}
                 ackdata = pickle.dumps(d)
                 transfer.sender(self.peer, ackdata)
+            return 1
 
         elif cmd["type"] == "signup":
             rval = self.authenticate(cmd, 1)
@@ -109,20 +114,25 @@ class peer(threading.Thread):
                 d = {"type":"rsignup", "content":"yes"}
                 ackdata = pickle.dumps(d)
                 transfer.sender(self.peer, ackdata)
-                # reply = pickle.loads(transfer.receiver(self.peer))
+                reply = pickle.loads(transfer.receiver(self.peer))
+                pprint(reply)
+                print(self.uname, "has modulelist: ")
+                pprint(reply["modlist"])
+                util.modupdate(reply, self.uname, "modulelist")
+
             elif rval == 2:
                 print("Username already exists.")
                 d = {"type":"rsignup", "content":"exists"}
                 ackdata = pickle.dumps(d)
                 transfer.sender(self.peer, ackdata)
-                reply = pickle.loads(transfer.receiver(self.peer))
 
             elif rval == 0:
                 print("Account creation failed.")
                 d = {"type":"rsignup", "content":"no"}
                 ackdata = pickle.dumps(d)
                 transfer.sender(self.peer, ackdata)
-                reply = pickle.loads(transfer.receiver(self.peer))
+
+            return 1
 
         elif cmd["type"] == "get":
             if cmd["content"] == "peerlist":
@@ -134,13 +144,18 @@ class peer(threading.Thread):
                 print("sending modulelist file...")
                 transfer.send_file(self.peer, "modulelist")
                 print("Done!")
+            return 1
+
+        elif cmd["type"] == "quit":
+            print("peer closed connection")
+            return 0
 
 
 
     def run(self):
         running = 1
         while running:
-            self.command_handler()
+            running = self.command_handler()
             # data = self.peer.recv(self.size)
 
 

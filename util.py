@@ -6,7 +6,7 @@ import pickle
 from pprint import pprint
 
 def show(fname):
-	print("--------------------------------------------------------------")
+	print("---------------------------------------------------------------------------")
 	with open(fname, 'rb') as fd:
 		while 1:
 			try:
@@ -14,7 +14,7 @@ def show(fname):
 				pprint(s)
 			except (EOFError):
 				break
-	print("--------------------------------------------------------------")
+	print("---------------------------------------------------------------------------")
 
 def insfunc(fname, insob):
 	with open(fname, 'ab') as fd:
@@ -42,12 +42,35 @@ def getpass(fname, uname):
 				return None
 				break
 
-def modListManipulator(peerModList, peerName, trackerModListFileName):
-	trackerModList = pickle.loads(readFile(trackerModListFileName))
-	for moduleName in peerModList:
-		if moduleName in trackerModList:
-			trackerModList[moduleName].append(peerName)
-		else:
-			trackerModList[moduleName] = [ peerName ]
+def modupdate(msg, uname, fname):
+	mlist = msg["modlist"]
+	with open("temp",'rb+') as ftemp:	
+		with open(fname, 'rb+') as fd:
+			while 1: 
+				try:
+					data = pickle.load(fd)
+					if data["modname"] in mlist:
+						data["peers"].add(uname)
+						mlist.remove(data["modname"])
+					pprint(data)
+					pickle.dump(data, ftemp)
+				except (EOFError):
+					break
 
-	writeFile(trackerModListFileName, pickle.dumps(trackerModList))
+			if len(mlist) > 0:
+				for mod in mlist:
+					data = {"modname":mod, "peers":{uname}}
+					pickle.dump(data, ftemp)
+					pprint(data)
+
+	with open("temp", 'rb+') as ftemp:
+		with open(fname, 'wb+') as fd:
+			while 1:
+				try:
+					s = pickle.load(ftemp)
+					pickle.dump(s, fd)
+				except (EOFError):
+					break
+
+	with open("temp", "wb") as ftemp:
+		pass

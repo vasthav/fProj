@@ -13,6 +13,9 @@ import sys
 import old.fmanager 
 from pprint import pprint
 
+# list of modules
+listofmodules = {"sum.py", "multiply.py", "letsdoit.py", "fourth.py"}
+
 # function to read from file
 def readFile(fileName):
 	with open(fileName, "rb") as inFile:
@@ -56,8 +59,8 @@ def peerFunctionality(settings):
 				pprint(reply)
 				if reply["type"] == "rlogin" and reply["content"] == "yes":
 					print("Login successful.")
-					listofmodules = pickle.loads(readFile("modulelist"))
-					msg = {"type" : "modulelist", "content" : listofmodules}
+					# listofmodules = pickle.loads(readFile("modulelist"))
+					msg = {"type" : "modlist", "modlist" : listofmodules}
 					transfer.sender(trackerSock, pickle.dumps(msg))
 					break
 				elif reply["type"] == "rlogin" and reply["content"] == "no":
@@ -80,8 +83,8 @@ def peerFunctionality(settings):
 
 				if reply["type"] == "rsignup" and reply["content"] == "yes":
 					print("Login successful.")
-					listofmodules = pickle.loads(readFile("modulelist"))
-					msg = {"type" : "modulelist", "content" : listofmodules}
+					# listofmodules = pickle.loads(readFile("modulelist"))
+					msg = {"type" : "modulelist", "modlist" : listofmodules}
 					transfer.sender(trackerSock, pickle.dumps(msg))
 					break
 				elif reply["type"] == "rsignup" and reply["content"] == "no":
@@ -91,6 +94,8 @@ def peerFunctionality(settings):
 
 			# if Exit selected
 			elif select == "3":
+				msg = {"type" : "quit"}
+				transfer.sender(trackerSock, pickle.dumps(msg))
 				sys.exit(0)
 			else:
 			# something else
@@ -119,7 +124,9 @@ def peerFunctionality(settings):
 				old.fmanager.show("inputmod")
 			
 			elif select == "3":
-				break
+				msg = {"type" : "quit"}
+				transfer.sender(trackerSock, pickle.dumps(msg))
+				sys.exit(0)
 			else:
 				print("Invalid option.")
 	
