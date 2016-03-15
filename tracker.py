@@ -137,7 +137,8 @@ class peer(threading.Thread):
         elif cmd["type"] == "get":
             if cmd["content"] == "peerlist":
                 print("sending peerlist file...")
-                transfer.send_file(self.peer, "peerlist")
+                util.makepeerlist("peerlist")
+                transfer.send_file(self.peer, "demopeerlist")
                 print("Done!")
 
             elif cmd["content"] == "modlist":

@@ -42,6 +42,29 @@ def getpass(fname, uname):
 				return None
 				break
 
+def makepeerlist(fname):
+	with open("temp",'rb+') as ftemp:	
+		with open(fname, 'rb+') as fd:
+			while 1: 
+				try:
+					s = pickle.load(fd)
+					del(s["pwd"])
+					pickle.dump(s, ftemp)
+				except (EOFError):
+					break
+
+	with open("temp", 'rb+') as ftemp:
+		with open("demopeerlist", 'wb+') as fd:
+			while 1:
+				try:
+					s = pickle.load(ftemp)
+					pickle.dump(s, fd)
+				except (EOFError):
+					break
+
+	with open("temp", "wb") as ftemp:
+		pass
+
 def modupdate(msg, uname, fname):
 	mlist = msg["modlist"]
 	with open("temp",'rb+') as ftemp:	

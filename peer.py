@@ -14,7 +14,7 @@ import old.fmanager
 from pprint import pprint
 
 # list of modules
-listofmodules = {"sum.py", "multiply.py", "letsdoit.py", "fourth.py"}
+listofmodules = {"sum.py", "multiply.py", "letsdoit.py", "fourth.py", "fifth.py"}
 
 # function to read from file
 def readFile(fileName):
