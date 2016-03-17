@@ -1,10 +1,12 @@
-# function arguments are module list from peer, peer's username and file name of tracker's module list file.
-# assumes that module list is received from peer as [ modName1, modName2 ]
-# module list is stored as { "modName1" : [ "peerName1", "peerName2" ], "modName2" : [ "peerName3", "peerName4" ] }
+"""
+This is the utility module  
+---------------------------
+"""
 
 import pickle
 from pprint import pprint
 
+# function to show the contents of a binary file in human readable form
 def show(fname):
 	print("---------------------------------------------------------------------------")
 	with open(fname, 'rb') as fd:
@@ -16,10 +18,12 @@ def show(fname):
 				break
 	print("---------------------------------------------------------------------------")
 
+# function to insert an object to a file
 def insfunc(fname, insob):
 	with open(fname, 'ab') as fd:
 		pickle.dump(insob, fd)
 
+# function to check if the uname exits in the file
 def uname_exits(fname, uname):
 	with open(fname, 'rb') as fd:
 		while 1:
@@ -31,6 +35,7 @@ def uname_exits(fname, uname):
 				return 0
 				break
 
+# function to get the password for a given uname
 def getpass(fname, uname):
 	with open(fname, 'rb') as fd:
 		while 1:
@@ -42,6 +47,7 @@ def getpass(fname, uname):
 				return None
 				break
 
+# function to create demopeerlist to send it to peer without the pwd field
 def makepeerlist(fname):
 	with open("temp",'rb+') as ftemp:	
 		with open(fname, 'rb+') as fd:
@@ -65,6 +71,7 @@ def makepeerlist(fname):
 	with open("temp", "wb") as ftemp:
 		pass
 
+# function for updating the module list 
 def modupdate(msg, uname, fname):
 	mlist = msg["modlist"]
 	with open("temp",'rb+') as ftemp:	
@@ -75,7 +82,7 @@ def modupdate(msg, uname, fname):
 					if data["modname"] in mlist:
 						data["peers"].add(uname)
 						mlist.remove(data["modname"])
-					pprint(data)
+					# pprint(data)
 					pickle.dump(data, ftemp)
 				except (EOFError):
 					break
@@ -84,7 +91,7 @@ def modupdate(msg, uname, fname):
 				for mod in mlist:
 					data = {"modname":mod, "peers":{uname}}
 					pickle.dump(data, ftemp)
-					pprint(data)
+					# pprint(data)
 
 	with open("temp", 'rb+') as ftemp:
 		with open(fname, 'wb+') as fd:

@@ -1,5 +1,5 @@
 """
-This is the peer code 
+This is the Peer code 
 ---------------------
 """
 
@@ -133,7 +133,7 @@ def peerFunctionality(settings):
 	except (ConnectionError, socket.error):
 		print("Connection problems. Please try later.")
 	
-
+# this is the function to initialise the peer with tracker ip and port
 def initialize():
 	if os.path.isfile("settings.dat") and os.path.getsize("settings.dat") > 0:
 		try:
@@ -145,7 +145,6 @@ def initialize():
 		peerFunctionality(settings)
 	else:
 		setup()
-
 
 
 if __name__ == "__main__":

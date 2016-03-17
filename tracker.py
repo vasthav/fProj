@@ -1,3 +1,8 @@
+"""
+This is the Tracker code 
+---------------------
+"""
+
 #!/usr/bin/env python
 
 import select
@@ -10,6 +15,7 @@ import os
 from pprint import pprint
 import transfer
 
+# Server class which deals with peer and server them
 class Server:
     def __init__(self):
         self.host = 'localhost'
@@ -19,6 +25,7 @@ class Server:
         self.server = None
         self.threads = []
 
+    # function to open the socket for listening to various peers
     def open_socket(self):
         try:
             self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -31,6 +38,7 @@ class Server:
             print("Could not open socket: ", message)
             sys.exit(1)
 
+    # server class handler function
     def run(self):
         self.open_socket()
         input = [self.server,sys.stdin]
@@ -50,6 +58,8 @@ class Server:
         for c in self.threads:
             c.join()
 
+
+# peer class for handling different peer requests
 class peer(threading.Thread):
     # def __init__(self, (peer,address)):
     def __init__(self, aval):
@@ -60,6 +70,7 @@ class peer(threading.Thread):
         self.uname = None
         print("Got connetion form : ", self.address[0],":", self.address[1])
 
+    # function for peer authentication
     def authenticate(self, cmd, n):
         if n == 0:
             if util.uname_exits("peerlist", cmd["uname"]) == 1:
@@ -79,11 +90,14 @@ class peer(threading.Thread):
                 return 2
         # return uname  
         
+    # function to handle peer requests
     def command_handler(self):
         # cmd = pickle.loads(self.peer.recv(self.size))
         cmd = pickle.loads(transfer.receiver(self.peer))
         print("request recieved: ")
         pprint(cmd)
+
+        # if login request
         if cmd["type"] == "login":
             rval = self.authenticate(cmd, 0)
             print("rval : .. ", rval)
@@ -106,6 +120,7 @@ class peer(threading.Thread):
                 transfer.sender(self.peer, ackdata)
             return 1
 
+        # if signup request
         elif cmd["type"] == "signup":
             rval = self.authenticate(cmd, 1)
             print("authenticated : ", rval)
@@ -134,25 +149,29 @@ class peer(threading.Thread):
 
             return 1
 
+        # if file download requested
         elif cmd["type"] == "get":
+            # if peerlist if requested
             if cmd["content"] == "peerlist":
                 print("sending peerlist file...")
                 util.makepeerlist("peerlist")
                 transfer.send_file(self.peer, "demopeerlist")
                 print("Done!")
 
+            # if module list is requested
             elif cmd["content"] == "modlist":
                 print("sending modulelist file...")
                 transfer.send_file(self.peer, "modulelist")
                 print("Done!")
             return 1
 
+        # if the peer wants to close the connection
         elif cmd["type"] == "quit":
             print("peer closed connection")
             return 0
 
 
-
+    # peer class handler
     def run(self):
         running = 1
         while running:
