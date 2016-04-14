@@ -1,9 +1,10 @@
+#python3.x code
+
 import os
 import socket
 import select
 import pickle
 import time
-import fcntl
 
 
 
@@ -58,17 +59,17 @@ def login(uname, pwd, addr):
 
 
 
-
 def create(uname, pwd, addr):
 	peerlist = filereader("peerlist")
 	if uname in peerlist:
-		return False
+		return "exists"
 	else:
 		peerlist[uname] = {"pwd" : pwd, "ip" : addr[0], "port" : addr[1], "last_seen" : time.time(), "status" : "online"}
 		if filewriter("peerlist", peerlist) == True:
-			return True
+			return "success"
 		else:
-			return False
+			return "fail"
+
 
 
 def keepalive(uname, pwd):
@@ -78,6 +79,8 @@ def keepalive(uname, pwd):
 			peerlist[uname]["last_seen"] = time.time()
 			peerlist[uname]["status"] = "online"
 
+
+
 def getpeerlist(sock):
 	print("Sending peerlist")
 	payload = filereader("peerlist")
@@ -86,6 +89,8 @@ def getpeerlist(sock):
 		for uname in payload:
 			sendable_payload[uname] = {"ip" : payload[uname]["ip"], "port" : payload[uname]["port"], "last_seen" : payload[uname]["last_seen"], "status" : payload[uname]["status"]}
 		sock.send(pickle.dumps(sendable_payload))
+
+
 
 def getmodulelist(sock):
 	print("Sending modulelist")
@@ -104,7 +109,6 @@ def update_peerlist(uname, pwd, status):
 
 
 
-
 def update_modulelist(uname, pwd, list_of_modules):
 	peerlist = filereader("peerlist")
 	if uname in peerlist:
@@ -114,19 +118,23 @@ def update_modulelist(uname, pwd, list_of_modules):
 			filewriter("modulelist", modulelist)
 
 
+
 def process(msg, sock, addr):
 	content = pickle.loads(msg)
 	print(content)
 	if content["cat"] == "login":
 		if login(content["uname"], content["pwd"], addr) == True:
-			sock.send(pickle.dumps("success"))
+			sock.send(pickle.dumps("Logged in successfully."))
 		else:
 			sock.send(pickle.dumps("fail"))
 	elif content["cat"] == "create":
-		if create(content["uname"], content["pwd"], addr) == True:
-			sock.send(pickle.dumps("success"))
-		else:
-			sock.send(pickle.dumps("fail"))
+		creator_response = create(content["uname"], content["pwd"], addr)
+		if creator_response == "exists":
+			sock.send(pickle.dumps("Account already exists."))
+		elif creator_response == "success":
+			sock.send(pickle.dumps("Account created successfully."))
+		elif creator_response == "fail":
+			sock.send(pickle.dumps("Account creation failed."))
 	elif content["cat"] == "keepalive":
 		keepalive(content["uname"], content["pwd"])
 	elif content["cat"] == "get":
@@ -191,6 +199,7 @@ if __name__ == "__main__":
 							readlist.remove(sock)
 						elif sock in writelist:
 							writelist.remove(sock)
+
 
 
 	except KeyboardInterrupt:
