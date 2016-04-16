@@ -88,18 +88,25 @@ def initiate(main_sock, tracker_addr, uname):
 def setup():
 	main_port = input("Enter port no you want to listen to : ")
 	tracker_ip = input("Enter IP address of tracker : ")
-	tracker_port = input("Enter port no of tracker : ")
+	tracker_port = int(input("Enter port no of tracker : "))
 	filewriter("settings", {"port" : main_port, "tracker_addr" : {"ip" : tracker_ip, "port" : tracker_port}})
+
 
 
 def initialize():
 	content = filereader("settings")
 	if content == {}:
 		setup()
+		return initialize()
 	elif content == False:
 		setup()
+		return initialize()
 	else:
 		return (content["port"], content["tracker_addr"])
+
+
+def volunteer():
+	print("You have opted to volunteer")
 
 
 
@@ -108,7 +115,6 @@ def main_op():
 		main_port, tracker_addr = initialize()
 		main_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		main_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		tracker_addr = {"ip" : "127.0.0.1", "port" : 5465}
 		print("1.\tLogin")
 		print("2.\tSign Up")
 		print("3.\tSetup")
