@@ -1,5 +1,5 @@
 #python 3.x code
-#continue from initiate / select_operation functions
+#continue from initiate_comp / select_operation functions
 
 import socket
 import pickle
@@ -71,7 +71,7 @@ def select_operation(main_sock, tracker_addr, uname, pwd):
 	if option == "1":
 		volunteer(main_sock, tracker_addr, uname)
 	elif option == "2":
-		initiate(uname, pwd)
+		initiate_comp(uname, pwd)
 	else:
 		print("Invalid option.")
 		select_operation(main_sock, tracker_addr, uname)
@@ -79,9 +79,12 @@ def select_operation(main_sock, tracker_addr, uname, pwd):
 
 
 
-def initiate(main_sock, tracker_addr, uname):
+def initiate_comp(main_sock, tracker_addr, uname):
 	main_sock.connect((tracker_addr["ip"], tracker_addr["port"]))
 
+
+def volunteer():
+	print("You have opted to volunteer")
 
 
 
@@ -103,10 +106,6 @@ def initialize():
 		return initialize()
 	else:
 		return (content["port"], content["tracker_addr"])
-
-
-def volunteer():
-	print("You have opted to volunteer")
 
 
 
