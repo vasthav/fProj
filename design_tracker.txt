@@ -1,0 +1,74 @@
+functions of tracker
+ - keeps list of peers
+ - keeps list of modules
+ - updates both the lists
+ - serves requests from peers
+
+
+operation flow
+ - startup
+ - check if peerlist and modulelist files are present
+ - if not present, create those files
+ - if present, check whether corrupt *
+ - if corrupt, re-initialize files *
+ - ask user for port no to listen on
+ - create main socket
+ - create list of sockets
+ - create dictionary for addresses
+ - listen for incoming
+ - select poll sockets - either accept new connections or process existing
+
+
+processing
+ - login 
+ - account creation
+ - modulelist update
+ - keepalive
+ - send peerlist
+ - send modulelist
+
+
+login
+ - get peerlist
+ - check if username exists
+ - if so, check if password correct, else send appropriate message
+ - if password correct, set last seen to current time and status to online, else send appropriate message
+ - in above stage, check if status already online and current ip/request ip. If any discrepancy, deny request. Only allow after a specific interval
+ - save peerlist
+
+
+account creation
+ - get peerlist
+ - check if username exists
+ - if so, send appropriate message, else
+ - note address of peer
+ - make new record with username as key containing password, ip, port, last seen and status
+ - default last seen is time of creation and default status is online
+ - append new record to peerlist, save
+
+
+
+listupdater
+ - for every iteration, of main loop, check if any peer has last seen greater than interval
+ - if yes, set status to offline
+
+
+filewriter
+ - take content as arg
+ - pickle
+ - o/p to text file?
+ - if failed, return False, else return True
+
+
+filereader
+ - read file
+ - unpickle
+ - return arg
+ - if failed, return False else return contents
+
+
+challenges 
+ - different functions might have different copies of peerlist/modulelist
+   an approach : put a central lock on peerlist and modulelist : other functions cannot make changes while files "locked"
+
+ - busy status
