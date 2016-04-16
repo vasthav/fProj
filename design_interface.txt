@@ -1,0 +1,56 @@
+requirements
+ - communication with module -> use fixed port
+ - maintain job list
+ - peer details
+ - module details
+ - user interface
+
+user interface
+ - login/create account prompt
+ - select operation : volunteer/initiate
+   - initiate : select module to run
+   - volunteer : wait for incoming request
+   				 accept / reject request
+ - display module list present locally
+
+
+
+operation flow
+ - run interface.py
+ - ask for login / signup
+ - select operation : volunteer / initiate
+ - initiate:
+   - select module
+   - run module
+   - wait for module response (on port)
+   - get jobdictionary from module
+     - jobdictionary : {list_of_files : {path1, path2}, deadline : 13134, module_required : adfdf}
+     - make job list 
+   - get peerlist
+   - set status busy
+   - contact online peers
+     - if accept, send job and details (deadline, module required)
+   - wait till deadline
+     - receive completed jobs
+     - send waiting jobs
+     - pass to module
+ - volunteer:
+   - wait for incoming
+   - accept /reject
+   - if accept
+     - set status to busy
+     - receive job
+     - if module not present
+       - get module list from tracker
+       - request each peer in module list for module
+       - if still not received module
+         - abort
+         - back to menu
+     - if module present
+       - run module
+       - pass data
+       - get result
+       - if result not obtained within deadline, abort
+       - send result
+       - back to menu
+  - if reject, back to menu
