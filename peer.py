@@ -1,3 +1,6 @@
+#python 3.x code
+#continue from initialize / select_operation functions
+
 import socket
 import pickle
 import os
