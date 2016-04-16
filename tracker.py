@@ -124,17 +124,17 @@ def process(msg, sock, addr):
 	print(content)
 	if content["cat"] == "login":
 		if login(content["uname"], content["pwd"], addr) == True:
-			sock.send(pickle.dumps("Logged in successfully."))
+			sock.send(pickle.dumps("success"))
 		else:
 			sock.send(pickle.dumps("fail"))
 	elif content["cat"] == "create":
 		creator_response = create(content["uname"], content["pwd"], addr)
 		if creator_response == "exists":
-			sock.send(pickle.dumps("Account already exists."))
+			sock.send(pickle.dumps("exists"))
 		elif creator_response == "success":
-			sock.send(pickle.dumps("Account created successfully."))
+			sock.send(pickle.dumps("created"))
 		elif creator_response == "fail":
-			sock.send(pickle.dumps("Account creation failed."))
+			sock.send(pickle.dumps("fail"))
 	elif content["cat"] == "keepalive":
 		keepalive(content["uname"], content["pwd"])
 	elif content["cat"] == "get":
