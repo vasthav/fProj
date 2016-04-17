@@ -33,6 +33,17 @@ def filereader(fname):
 		return False
 
 
+def call_module(modname):
+	try:
+		fd = open(modname+".py", "r")
+		content = fd.read()
+		exec(content)
+		return True
+	except Exception as e:
+		print("Module error : \n" + str(e))
+		return False
+
+
 def login(sock, tracker_addr):
 	uname = input("Please enter your username : ")
 	pwd = getpass.getpass(prompt = "Please enter your password : ")
@@ -75,12 +86,55 @@ def select_operation(tracker_addr, uname, pwd):
 
 
 
-def initiate_comp(sock, tracker_addr, uname):
+def initiate_comp(tracker_addr, uname, pwd):
+	main_sock = create_sock()
 	main_sock.connect((tracker_addr["ip"], tracker_addr["port"]))
-	pass
+	main_sock.send(pickle.dumps({"cat" : "get", "item" : "peerlist"}))
+	peerlist = pickle.loads(main_sock.recv(1024))
+	main_sock.close()
+	main_sock = create_sock()
+	main_sock.bind(("0.0.0.0", main_port))
+	modname = input("Enter name of module to execute : ")
+	description = input("Describe your work : ")
+	if call_module(modname) == True:
+		brolist = []
+		goodbros = []
+		for peer in peerlist:
+			if peerlist[peer]["status"] == "online":
+				bro_sock = create_sock()
+				bro_sock.setblocking(0)
+				bro_sock.connect((peerlist[peer]["ip"], peerlist[peer]["port"]))
+				bro_sock.send(pickle.dumps({"cat" : "request", "module" : modname, "description" : description}))
+				brolist.append(bro_sock)
+		while brolist:
+			readlist, writelist, exceptlist = select.select(brolist, [], [], 0.7)
+			for sock in readlist:
+				msg = sock.recv(1024)
+				if msg:
+					contents = pickle.loads(msg)
+					if contents["cat"] == "request":
+						if content["reply"] == "accept":
+							goodbros.append(sock)
+		mod_sock = create_sock()
+		mod_sock.listen(1)
+		mod_op, mod_addr = mod_sock.accept()
+		mod_comm = [ mod_op ]
+		while mod_comm:
+			readlist, writelist, exceptlist = select.select(mod_comm, [], [], 0.7)
+			for sock in readlist:
+				msg = sock.recv(1024)
+				if msg:
+					content = pickle.loads(msg)
+					if content["cat"] == "jobs":
+						tries = 3
+						start_time = time.time()
+						scheduler(content["jobfiles"], content["deadline"], sock)
 
 
-def volunteer(tracker_addr, uname):
+
+
+
+def volunteer(tracker_addr, uname, pwd):
 	print("You have opted to volunteer")
 	msg = None
 	main_sock = create_sock()
@@ -128,20 +182,23 @@ def vprocess(msg, sock, main_sock, tracker_addr, uname, pwd):
 	print(content)
 	
 	if content["cat"] == "getmodule":
-		if os.path.isfile("./modules/"+content["modname"]+".py"):
-			data = filereader("./modules/"+content["modname"]+".py")
-			mains_sock.send(pickle.dumps(data))
-			print("Requested Module Sent: ", content["modname"]+".py")
+		if os.path.isfile("./modules/"+content["module"]+".py"):
+			data = filereader("./modules/"+content["module"]+".py")
+			sock.send(pickle.dumps(data))
+			print("Requested Module Sent: ", content["module"]+".py")
 		else:
 			print("Requested module does not exists")
 			sock.send(pickle.dumps("Module Unavailable"))
-		return "Module_Sent"
 
 	elif content["cat"] == "request":
+		print("Incoming request : ")
+		print(content["description"])
+		print("Module required : " + content["module"])
 		choice = input("Do you want to volunteer? (Yes / No) ")
 		if choice == "Yes" or choice == "yes" or choice == "y" or choice == "Y":
 			print("Thank you for participating in the Project.")
-			main_sock.send(pickle.dumps({"cat":"update", "item":"peerlist", "uname":uname, "pwd",pwd, "status": "busy"}))
+			#main_sock.send(pickle.dumps({"cat":"update", "item":"peerlist", "uname":uname, "pwd",pwd, "status": "busy"}))
+			sock.send(pickle.dumps({"cat" : "request", "reply" : "accept"}))
 			# recieve_job(job)
 			# if not os.path.isfile("./modules/"+content["modname"]+".py"):
 			# 	getmodule(modname, main_sock, tracker_addr)
