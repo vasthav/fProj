@@ -32,13 +32,6 @@ def filereader(fname):
 	except (IOError, pickle.PicklingError) as e:
 		return False
 
-def checkmod(modname):
-	modlist = filereader("modlist")
-	if mod in modlist:
-		return True
-	else:
-		return False
-
 
 def login(sock, tracker_addr):
 	uname = input("Please enter your username : ")
@@ -46,7 +39,7 @@ def login(sock, tracker_addr):
 	sock.connect((tracker_addr["ip"], tracker_addr["port"]))
 	sock.send(pickle.dumps({"cat" : "login", "uname" : uname, "pwd" : pwd}))
 	reply = pickle.loads(sock.recv(1024))
-	# sock.close()
+	sock.close()
 	if reply == "success":
 		print("Logged in successfully.")
 		return (1, uname, pwd)
@@ -67,29 +60,35 @@ def signup(sock, tracker_addr):
 		print("Account creation failed.")
 
 
-def select_operation(main_sock, tracker_addr, uname, pwd):
+def select_operation(tracker_addr, uname, pwd):
 	print("What do you want to do?")
 	print("1.\tVolunteer")
 	print("2.\tInitiate")
 	option = input("Please select option : ")
 	if option == "1":
-		volunteer(main_sock, tracker_addr, uname)
+		volunteer(tracker_addr, uname, pwd)
 	elif option == "2":
-		initiate_comp(main_sock, tracker_addr, uname, pwd)
+		initiate_comp(tracker_addr, uname, pwd)
 	else:
 		print("Invalid option.")
-		select_operation(main_sock, tracker_addr, uname)
+		select_operation(tracker_addr, uname)
 
 
 
-def initiate_comp(main_sock, tracker_addr, uname):
+def initiate_comp(sock, tracker_addr, uname):
 	main_sock.connect((tracker_addr["ip"], tracker_addr["port"]))
 	pass
 
 
-def volunteer(main_sock, tracker_addr, uname):
+def volunteer(tracker_addr, uname):
 	print("You have opted to volunteer")
 	msg = None
+	main_sock = create_sock()
+	main_sock.setblocking(0)
+	main_sock.bind(("0.0.0.0", main_port))
+	dict_of_addr = {}
+	main_sock.listen(5)
+
 	list_of_socks = [ main_sock ]
 	while list_of_socks:
 		readlist, writelist, exceptlist = select.select(list_of_socks, [], [], 0.7)
@@ -111,23 +110,44 @@ def volunteer(main_sock, tracker_addr, uname):
 						writelist.remove(sock)
 				else:
 					print("calling process")
-					result = process(msg, sock, main_sock, uname)
-					sock.send(pickle.dumps(result))
+					vprocess(msg, sock, main_sock, tracker_addr, uname, pwd)
+					# sock.send(pickle.dumps(result))
 					list_of_socks.remove(sock)
 
 
-def process(msg, sock, main_sock, uname, pwd):
+def getmodule(modname, main_sock, tracker_addr):
+	main_sock.send(pickle.dumps({"cat":"get", "item":"modulelist"}))
+	content = pickle.loads(main_sock.recv(1024))
+	for i in content:
+		if modname == i["modname"]:
+			# send request
+			pass
+
+def vprocess(msg, sock, main_sock, tracker_addr, uname, pwd):
 	content = pickle.loads(msg)
 	print(content)
-	choice = input("Do you want to volunteer? (Yes / No) ")
-	if choice == "Yes" or choice == "yes" or choice == "y" or choice == "Y":
-		print("Thank you for participating in the Project.")
-		main_sock.send(pickle.dumps({"cat":"update", "item":"peerlist", "uname":uname, "pwd",pwd, "status": "busy"}))
-		# recieve_job(job)
-		# if not check_module(modname):
-		# 	getmodule(modname)
-		# result = module(job)
-		# return result
+	
+	if content["cat"] == "getmodule":
+		if os.path.isfile("./modules/"+content["modname"]+".py"):
+			data = filereader("./modules/"+content["modname"]+".py")
+			mains_sock.send(pickle.dumps(data))
+			print("Requested Module Sent: ", content["modname"]+".py")
+		else:
+			print("Requested module does not exists")
+			sock.send(pickle.dumps("Module Unavailable"))
+		return "Module_Sent"
+
+	elif content["cat"] == "request":
+		choice = input("Do you want to volunteer? (Yes / No) ")
+		if choice == "Yes" or choice == "yes" or choice == "y" or choice == "Y":
+			print("Thank you for participating in the Project.")
+			main_sock.send(pickle.dumps({"cat":"update", "item":"peerlist", "uname":uname, "pwd",pwd, "status": "busy"}))
+			# recieve_job(job)
+			# if not os.path.isfile("./modules/"+content["modname"]+".py"):
+			# 	getmodule(modname, main_sock, tracker_addr)
+			# result = module(job)
+			# return result
+
 
 def setup():
 	main_port = input("Enter port no you want to listen to : ")
@@ -147,24 +167,31 @@ def initialize():
 	else:
 		return (content["port"], content["tracker_addr"])
 
+def create_sock():
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	# sock.setblocking(0)
+	return sock
+
 
 def main_op():
 	try:
+		sock = create_sock()
 		main_port, tracker_addr = initialize()
-		main_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		main_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		print("1.\tLogin")
 		print("2.\tSign Up")
 		print("3.\tSetup")
 		option = input("Please select option : ")
 		if option == "1":
-			login_flag, uname, pwd = login(main_sock, tracker_addr) 
+			login_flag, uname, pwd = login(sock, tracker_addr) 
 			if login_flag == 1:
-				select_operation(main_sock, tracker_addr, uname, pwd)
+				# sock = create_sock()
+				select_operation(tracker_addr, uname, pwd)
 			else:
 				main_op()
 		elif option == "2":
-			signup(main_sock, tracker_addr)
+			signup(sock, tracker_addr)
+			# sock = create_sock()
 			main_op()
 		elif option == "3":
 			setup()
