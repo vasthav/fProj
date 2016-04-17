@@ -1,0 +1,18 @@
+             _                           
+ __   _____ | | ___ ___  _ __ ___  _ __  
+ \ \ / / _ \| |/ __/ _ \| '_ ` _ \| '_ \ 
+  \ V / (_) | | (_| (_) | | | | | | |_) |
+   \_/ \___/|_|\___\___/|_| |_| |_| .__/ 
+                                  |_|    
+
+ Software Platform for VOLunteered COMPuting
+
+ Implementation of a software platform for volunteered computing which 
+ uses P2P for communication/data sharing between volunteering nodes. 
+ The platform can be used to handle various problems by designing and 
+ running appropriate modules on it.
+
+ Authors
+ ----------
+ K C Sreevasthavan, Giridhar G Nair, Irfan T Naushad
+
