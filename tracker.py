@@ -1,11 +1,11 @@
-#python3.x code
+# tracker.py
+# python3.x code
 
 import os
 import socket
 import select
 import pickle
 import time
-
 
 
 def filewriter(fname, content):
@@ -19,7 +19,6 @@ def filewriter(fname, content):
 		return False
 
 
-
 def filereader(fname):
 	try:
 		if os.path.getsize(fname) == 0:
@@ -31,7 +30,6 @@ def filereader(fname):
 		return data
 	except (IOError, pickle.PicklingError) as e:
 		return False
-
 
 
 def login(uname, pwd, addr):
@@ -58,7 +56,6 @@ def login(uname, pwd, addr):
 		return False
 
 
-
 def create(uname, pwd, addr):
 	peerlist = filereader("peerlist")
 	if uname in peerlist:
@@ -71,14 +68,12 @@ def create(uname, pwd, addr):
 			return "fail"
 
 
-
 def keepalive(uname, pwd):
 	peerlist = filereader("peerlist")
 	if uname in peerlist:
 		if peerlist[uname]["pwd"] == pwd:
 			peerlist[uname]["last_seen"] = time.time()
 			peerlist[uname]["status"] = "online"
-
 
 
 def getpeerlist(sock):
@@ -91,13 +86,11 @@ def getpeerlist(sock):
 		sock.send(pickle.dumps(sendable_payload))
 
 
-
 def getmodulelist(sock):
 	print("Sending modulelist")
 	payload = filereader("modulelist")
 	if payload != False:
 		sock.send(pickle.dumps(payload))
-
 
 
 def update_peerlist(uname, pwd, status):
@@ -108,7 +101,6 @@ def update_peerlist(uname, pwd, status):
 			filewriter("peerlist", peerlist)
 
 
-
 def update_modulelist(uname, pwd, list_of_modules):
 	peerlist = filereader("peerlist")
 	if uname in peerlist:
@@ -116,7 +108,6 @@ def update_modulelist(uname, pwd, list_of_modules):
 			modulelist = filereader("modulelist")
 			modulelist[uname] = list_of_modules
 			filewriter("modulelist", modulelist)
-
 
 
 def process(msg, sock, addr):
@@ -149,14 +140,12 @@ def process(msg, sock, addr):
 			update_modulelist(content["uname"], content["pwd"], content["list"])
 
 
-
 def listupdater(interval):
 	peerlist = filereader("peerlist")
 	for uname in peerlist:
 		if (time.time() - peerlist[uname]["last_seen"]) >= interval:
 			peerlist[uname]["status"] = "offline"
 	filewriter("peerlist", peerlist)
-
 
 
 if __name__ == "__main__":
@@ -199,7 +188,6 @@ if __name__ == "__main__":
 							readlist.remove(sock)
 						elif sock in writelist:
 							writelist.remove(sock)
-
 
 
 	except KeyboardInterrupt:
