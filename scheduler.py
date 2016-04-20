@@ -1,5 +1,4 @@
-# use serialized job itself as key (instead of job id)
-# use in event loop
+# job in this class stands for job id 
 
 class Scheduler:
 	list_of_jobs = []
@@ -46,3 +45,18 @@ class Scheduler:
 
 	def get_results(self):
 		return list_of_results
+
+# use as follows 
+
+# create schedule = Scheduler(list_of_jobs_from_module, list_of_volunteers_from_peer, timeout_specified_by_module)
+
+# loop
+# 	r, w, e = select(list_of_socks, [], [], __)
+# 	run schedule.assign() -> takes jobs from unassigned_list and assigns them to peers
+# 	then jobs will be assigned to volunteers (assigned_list) and remaining will be in unassigned_list
+# 	send jobs to peers according to assigned_list
+# 	if any results received, run schedule.add_to_completed(job, result)
+# 	can check status of job by running schedule.check_status
+	
+
+# outside loop, get all results by running schedule.get_results
