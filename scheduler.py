@@ -1,3 +1,6 @@
+# use serialized job itself as key (instead of job id)
+# use in event loop
+
 class Scheduler:
 	list_of_jobs = []
 	list_of_results = {}
