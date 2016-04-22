@@ -1,62 +1,52 @@
-# job in this class stands for job id 
-
 class Scheduler:
-	list_of_jobs = []
-	list_of_results = {}
-	start_time = None
+	unassigned = []
+	volunteers = []
+	assigned = {}
 	timeout = None
-	def __init__(self, list_of_jobs, list_of_volunteers, timeout):
-		self.list_of_jobs = list_of_jobs
-		self.list_of_volunteers = list_of_volunteers
+	start_time = None
+
+
+	def __init__(self, list_of_jobs, list_of_volunteers, timeout = None):
+		self.unassigned = list_of_jobs
+		self.volunteers = list_of_volunteers
 		self.timeout = timeout
 
+
 	def assign(self):
-		start_time = time.time()
-		assigned_list = {}
-		unassigned_list = []
-		if self.list_of_jobs != []:
-			marker = 0
-			for job in self.list_of_jobs:
-				if marker < len(self.list_of_volunteers):
-					assigned_list[job] = self.list_of_volunteers[marker]
-					self.list_of_jobs.remove(job)
-					marker += 1
-				else:
-					break
-		return assigned_list, self.list_of_jobs
+		while (len(self.volunteers) != 0) and (len(self.unassigned) != 0):
+			self.assigned[self.unassigned[0]] = self.volunteers[0]
+			del self.unassigned[0]
+			del self.volunteers[0]
+		return self.assigned, self.unassigned
 
-	def check_status(self):
-		if list_of_jobs != []:
-			return False
-		else:
-			return True
 
-	def poll_jobs():
-		if (time.time() - start_time) >= timeout:
-			if assigned_list != {}:
-				for job in assigned_list:
-					unassigned_list.append(job)
-					del assigned_list[job]
+	def set_start_time(self):
+		self.start_time = time.time()
 
-	def add_to_completed(self, job, result):
-		if job in assigned_list:
-			list_of_results[job] = result
-			del assigned_list[job]
 
-	def get_results(self):
-		return list_of_results
+	def poll_jobs(self):
+		if (time.time() - self.start_time) > self.timeout:
+			while (len(self.assigned)) != 0:
+				job, volunteer = self.assigned.popitem()
+				self.unassigned.append(job)
+		return self.unassigned
 
-# use as follows 
 
-# create schedule = Scheduler(list_of_jobs_from_module, list_of_volunteers_from_peer, timeout_specified_by_module)
+	def add_to_completed(self, job):
+		if job in self.assigned:
+			self.completed.append(job)
+			del self.assigned[job]
 
-# loop
-# 	r, w, e = select(list_of_socks, [], [], __)
-# 	run schedule.assign() -> takes jobs from unassigned_list and assigns them to peers
-# 	then jobs will be assigned to volunteers (assigned_list) and remaining will be in unassigned_list
-# 	send jobs to peers according to assigned_list
-# 	if any results received, run schedule.add_to_completed(job, result)
-# 	can check status of job by running schedule.check_status
-	
 
-# outside loop, get all results by running schedule.get_results
+# here job stands for job id
+# use dictionary for storing job_id and raw data/results
+# requires time module
+# use as follows
+# create schedule object
+# schedule = Scheduler([1, 2, 4, 10, 11], [5, 6, 7, 8], 2)
+# set time after sending jobs to peers
+# schedule.set_start_time()
+# when peer sends back result
+# schedule.add_to_completed(4)
+# to check at periodic iterations if any jobs have yet to be completed
+# print(schedule.poll_jobs())
