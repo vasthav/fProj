@@ -38,7 +38,7 @@ def login(uname, pwd, addr):
 		print("Username exists")
 		if peerlist[uname]["pwd"] == pwd:
 			print("Password correct")
-			if ((time.time() - peerlist[uname]["last_seen"]) <= 60) and (peerlist[uname]["ip"] != addr[0]):
+			if ((time.time() - peerlist[uname]["last_seen"]) <= 60) and (peerlist[uname]["ip"] != addr[0] or peerlist[uname]["port"] != addr[1]):
 				print("Just logged in from elsewhere.")
 				return False
 			else:
@@ -123,7 +123,7 @@ def process(msg, sock, addr):
 		if creator_response == "exists":
 			sock.send(pickle.dumps("exists"))
 		elif creator_response == "success":
-			sock.send(pickle.dumps("created"))
+			sock.send(pickle.dumps("success"))
 		elif creator_response == "fail":
 			sock.send(pickle.dumps("fail"))
 	elif content["cat"] == "keepalive":
