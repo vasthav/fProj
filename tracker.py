@@ -38,7 +38,7 @@ def login(uname, pwd, addr):
 		print("Username exists")
 		if peerlist[uname]["pwd"] == pwd:
 			print("Password correct")
-			if ((time.time() - peerlist[uname]["last_seen"]) <= 60) and (peerlist[uname]["ip"] != addr[0] or peerlist[uname]["port"] != addr[1]):
+			if ((time.time() - peerlist[uname]["last_seen"]) <= 60) and (peerlist[uname]["ip"] != addr[0] and peerlist[uname]["port"] != addr[1]):
 				print("Just logged in from elsewhere.")
 				return False
 			else:
@@ -167,13 +167,13 @@ if __name__ == "__main__":
 		while list_of_socks:
 			msg = None
 			readlist, writelist, exceptlist = select.select(list_of_socks, [], [], 0.7)
-			for sock in list_of_socks:
+			for sock in readlist:
 				listupdater(60)
 				if sock is main_sock:
 					try:
 						newsock, newaddr = sock.accept()
 						newsock.setblocking(0)
-						list_of_socks.append(newsock)
+						readlist.append(newsock)
 						dict_of_addr[newsock] = newaddr
 					except BlockingIOError:
 						pass
@@ -181,7 +181,7 @@ if __name__ == "__main__":
 					msg = sock.recv(1024)
 					if msg:
 						process(msg, sock, dict_of_addr[sock])
-						list_of_socks.remove(sock)
+						readlist.remove(sock)
 						del dict_of_addr[sock]
 					else:
 						if sock in readlist:
