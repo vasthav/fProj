@@ -7,6 +7,9 @@ import socket
 import pickle
 import select
 import getpass
+import threading
+import time
+import transfer
 
 
 def filewriter(fname, content):
@@ -96,8 +99,102 @@ def volunteer(main_port, tracker_addr, uname, pwd):
 	sock = create_sock(main_port)
 	sock.listen(4)
 	nsock, naddr = sock.accept()
-	print(pickle.loads(nsock.recv(1024)))
+	print (pickle.loads(transfer.receiver(nsock)))
+	# print(pickle.loads(nsock.recv(1024)))
+	transfer.sender(sock, pickle.dumps("yes"))
+	nsock.close()
+	# sock.connect((naddr[0], naddr[1]))
+	# sock.send(pickle.dumps({"yes"}))
+
+
+def initiate_sender(main_port, tracker_addr, uname, pwd, peerlist):
+	print("Sending requests....")
+	sock = create_sock()
+	while peerlist:
+		pk, pv = peerlist.popitem()
+		sock.connect((pv[0], pv[1]))
+		sock.sender(pickle.dumps({"cat": "request"}))
+
+
+def peer_ready(peer):
+	sock = create_sock()
+	sock.connect((peer["ip"], peer["port"]))
+
+	transfer.sender(sock, pickle.dumps({"cat" : "request"}))
+	#sock.send(pickle.dumps({"cat" : "request"}))
+	response = pickle.loads(transfer.receiver(sock))
 	sock.close()
+	if response == "yes":
+		return True
+	else:
+		return False
+
+		
+
+def initiate2(main_port, tracker_addr, uname, pwd, modpath):
+	seg_job = [[1, 2], [3, 4], [5, 6], [7, 8]]
+	job_status = [False, False, False, False]
+	job_remaining = 4
+
+	results = [None for x in range(0, len(seg_job))]
+	
+	while True:
+		threads = [None for x in range(0, len(seg_job))]
+		sock = create_sock(main_port)
+		sock.connect((tracker_addr["ip"], tracker_addr["port"]))
+		sock.send(pickle.dumps({"cat" : "get", "item" : "peerlist"}))
+		peerlist = pickle.loads(sock.recv(1024))
+		sock.close()
+		
+		if job_remaining == 0:
+			break
+
+		for i in range(0, len(seg_job)):
+			if job_status[i] == False:
+				peer_found = False
+				for peer in peerlist:
+					if peer_ready(peerlist[peer]):
+						threads[i] = threading.Thread(target = solve_job, args = (peer, seg_job[i]), daemon = True)
+						threads[i].start()
+						peer_found = True
+
+				if not peer_found:
+					break
+
+		#Wait for threads to complete
+		for i in range(0, len(seg_job)):
+			if threads[i] is not None:
+				result = threads[i].join()
+				if result[0] == True:
+					job_remaining = job_remaining - 1
+					results[i] = result[1]
+
+		#If there are no threads to wait for, it means that no jobs were sent successfully.
+		#Wait for a random amount of time so that someone may come online.
+		for i in range(0, len(seg_job)):
+			if threads[i] is not None:
+				pass
+		sleep(20)
+
+
+
+
+def solve_job (host, job):
+	sock = create_sock()
+	sock.connect((host["ip"], host["port"]))
+	sock.send(pickle.dumps({"cat" : "request"}))
+	response = pickle.loads(sock.recv(1024))
+	if response["content"] == "false":
+		return [False, None]
+	sock.send(pickle.dumps(job))
+	result = pickle.loads(sock.recv(1024))
+	return [True, result]
+
+
+
+
+
+
 
 
 def initiate(main_port, tracker_addr, uname, pwd):
@@ -113,28 +210,34 @@ def initiate(main_port, tracker_addr, uname, pwd):
 		os.system(command)
 	else:
 		initiate(main_port, tracker_addr, uname, pwd)
-	sock = create_sock(main_port)
+	sock = create_sock()
+	sock.connect
+	initiate2(main_port, tracker_addr, uname, pwd, modpath)
+	# sock = create_sock(main_port)
 	# sock.setblocking(0)
-	# readlist = [ sock ]
 	# sendsock = create_sock()
+	# readlist = [ sock ]
 	# writelist = [ sendsock ]
 	# dict_of_addr = {}
+	# sock.listen(10)
+	# print("after listening")
 	# while True:
-	# 	msg = None
+	# 	print("Entering loop")
 	# 	readlist, writelist, exceptlist = select.select(readlist, writelist, [], 0.7)
-	# 	for r_sock in readlist:
-	# 		if r_sock is sock:
+	# 	for rsock in readlist:
+	# 		if rsock is sock:
 	# 			try:
-	# 				newsock, newaddr = r_sock.accept()
+	# 				print("Listening for incoming....")
+	# 				newsock, newaddr = rsock.accept()
 	# 				newsock.setblocking(0)
 	# 				readlist.append(newsock)
 	# 				dict_of_addr[newsock] = newaddr
-	# 			except (BlockingIOError, OSError):
+	# 			except BlockingIOError:
 	# 				pass
 	# 		else:
-	# 			msg = sock.recv(1024)
+	# 			msg = rsock.recv(1024)
 	# 			if msg:
-	# 				process(msg, sock, dict_of_addr[sock])
+	# 				print(pickle.loads(msg))
 	# 				readlist.remove(sock)
 	# 				del dict_of_addr[sock]
 	# 			else:
@@ -142,21 +245,19 @@ def initiate(main_port, tracker_addr, uname, pwd):
 	# 					readlist.remove(sock)
 	# 				elif sock in writelist:
 	# 					writelist.remove(sock)
-
-	# 	print(readlist)
-	# 	print(writelist)
-	# 	for w_sock in writelist:
-	# 		pk, pv = peerlist.popitem()
-	# 		w_sock.connect((pv["ip"], pv["port"]))
-	# 		w_sock.send(pickle.dumps({"cat" : "request"}))
-
-
-	
-
-
-	
-
-
+	# 	for wsock in writelist:
+	# 		print("Entering send section")
+	# 		if peerlist:
+	# 			pk, pv = peerlist.popitem()
+	# 			if pk != uname:
+	# 				try:
+	# 					wsock.connect((pv["ip"], pv["port"]))
+	# 					wsock.send(pickle.dumps({"cat" : "request"}))
+	# 					#wsock.close()
+	# 				except BlockingIOError:
+	# 					pass
+	threading.Thread(target = initiate_sender, args = (main_port, tracker_addr, uname, pwd, peerlist), daemon = True).start()
+	time.sleep(10)
 
 
 def setup():
