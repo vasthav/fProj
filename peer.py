@@ -99,31 +99,32 @@ def volunteer(main_port, tracker_addr, uname, pwd):
 	sock = create_sock(main_port)
 	sock.listen(4)
 	nsock, naddr = sock.accept()
-	print (pickle.loads(transfer.receiver(nsock)))
-	# print(pickle.loads(nsock.recv(1024)))
-	transfer.sender(sock, pickle.dumps("yes"))
-	nsock.close()
-	# sock.connect((naddr[0], naddr[1]))
-	# sock.send(pickle.dumps({"yes"}))
 
+	r = nsock.recv(1024)
+	print(pickle.loads(r))
 
-def initiate_sender(main_port, tracker_addr, uname, pwd, peerlist):
-	print("Sending requests....")
-	sock = create_sock()
-	while peerlist:
-		pk, pv = peerlist.popitem()
-		sock.connect((pv[0], pv[1]))
-		sock.sender(pickle.dumps({"cat": "request"}))
+	s = nsock.send(pickle.dumps("yes"))
+	print("s: ", s)
+	
+
+# def initiate_sender(main_port, tracker_addr, uname, pwd, peerlist):
+# 	print("Sending requests....")
+# 	sock = create_sock()
+# 	while peerlist:
+# 		pk, pv = peerlist.popitem()
+# 		sock.connect((pv[0], pv[1]))
+# 		sock.sender(pickle.dumps({"cat": "request"}))
 
 
 def peer_ready(peer):
 	sock = create_sock()
 	sock.connect((peer["ip"], peer["port"]))
-
-	transfer.sender(sock, pickle.dumps({"cat" : "request"}))
-	#sock.send(pickle.dumps({"cat" : "request"}))
-	response = pickle.loads(transfer.receiver(sock))
+	sock.send(pickle.dumps({"cat" : "request"}))
+	
+	r = sock.recv(1024)
 	sock.close()
+	
+	response = pickle.loads(r)
 	if response == "yes":
 		return True
 	else:
@@ -152,6 +153,11 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 		for i in range(0, len(seg_job)):
 			if job_status[i] == False:
 				peer_found = False
+				# if uname in peerlist:
+				try:
+					del peerlist[uname]
+				except:
+					pass
 				for peer in peerlist:
 					if peer_ready(peerlist[peer]):
 						threads[i] = threading.Thread(target = solve_job, args = (peer, seg_job[i]), daemon = True)
