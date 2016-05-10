@@ -10,6 +10,7 @@ import getpass
 import threading
 import time
 import transfer
+import queue
 
 
 def filewriter(fname, content):
@@ -154,6 +155,8 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 
 	results = [None for x in range(0, len(seg_job))]
 	assigned = []
+
+	q = queue.Queue()
 	
 	while True:
 		threads = [None for x in range(0, len(seg_job))]
@@ -177,7 +180,7 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 				for peer in peerlist:
 					if peer not in assigned:
 						if peer_ready(peerlist[peer]) == True:
-							threads[i] = threading.Thread(target = solve_job, args = (peerlist[peer], seg_job[i]), daemon = True)
+							threads[i] = threading.Thread(target = solve_job, args = (peerlist[peer], seg_job[i], q), daemon = True)
 							threads[i].start()
 							peer_found = True
 							assigned.append(peer)
@@ -188,7 +191,8 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 		#Wait for threads to complete
 		for i in range(0, len(seg_job)):
 			if threads[i] is not None:
-				result = threads[i].join()
+				threads[i].join()
+				result = q.get()
 				print(result[0])
 				if result[0] == True:
 					job_remaining = job_remaining - 1
@@ -199,12 +203,12 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 		for i in range(0, len(seg_job)):
 			if threads[i] is not None:
 				pass
-		sleep(20)
+		time.sleep(20)
 
 
 
 
-def solve_job (host, job):
+def solve_job (host, job, q):
 	print((host["ip"], host["port"]))
 	sock = create_sock()
 	sock.connect((host["ip"], host["port"]))
@@ -219,12 +223,15 @@ def solve_job (host, job):
 	r = sock.recv(1024)
 	response = pickle.loads(r)
 	if response["content"] == False:
-		return [False, None]
+		ret = [False, None]
+	else:
+		ret = [True, response["result"]]
 	# sock.send(pickle.dumps(job))
 	# r = sock.recv(1024)
 	# result = pickle.loads(r)
-	return [True, response["result"]]
-
+	
+	q.put(ret)
+	return ret
 
 
 
