@@ -97,27 +97,48 @@ def select_operation(main_port, tracker_addr, uname, pwd):
 
 def volunteer(main_port, tracker_addr, uname, pwd):
 	print("You have selected to volunteer.")
-	sock = create_sock(main_port)
-	sock.listen(4)
-	nsock, naddr = sock.accept()
+	while True:
+		sock = create_sock(main_port)
+		sock.listen(4)
+		nsock, naddr = sock.accept()
 
-	r = nsock.recv(1024)
-	print(pickle.loads(r))
+		r = nsock.recv(1024)
+		print(pickle.loads(r))
 
-	s = nsock.send(pickle.dumps("yes"))
-	print("s: ", s)
-	nsock.close()
-	sock.close()
+		choice = input("Do you want to participate? y/n, any other key to go back")
+		if choice == "y":
+			s = nsock.send(pickle.dumps("yes"))
+			print("s: ", s)
+			nsock.close()
+			sock.close()
 
-	sock = create_sock(main_port)
-	sock.listen(4)
-	nsock, naddr = sock.accept()
-	r = nsock.recv(1024)
-	print(pickle.loads(r))
+			sock = create_sock(main_port)
+			sock.listen(4)
+			nsock, naddr = sock.accept()
+			r = nsock.recv(1024)
+			print(pickle.loads(r))
 
-	nsock.send(pickle.dumps({"content": True, "result":10}))
-	nsock.close()
-	sock.close()
+			msock = create_sock()
+			msock.connect(("127.0.0.1", 54321))
+			msock.send(pickle.dumps(r))
+			msock.close()
+
+			msock = create_sock()
+			msock.listen()
+			newmsock = msock.accept()
+			r = newmsock.recv(1024)
+
+
+			nsock.send(pickle.dumps(r))
+			nsock.close()
+			sock.close()
+		elif choice == "n":
+			nsock.send(pickle.dumps("no"))
+			nsock.close()
+			sock.close()
+			continue
+		else:
+			break
 	
 
 # def initiate_sender(main_port, tracker_addr, uname, pwd, peerlist):
@@ -158,6 +179,7 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 
 	q = queue.Queue()
 	
+	start_time = time.time()
 	while True:
 		threads = [None for x in range(0, len(seg_job))]
 		sock = create_sock(main_port)
@@ -193,7 +215,7 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 			if threads[i] is not None:
 				threads[i].join()
 				result = q.get()
-				print(result[0])
+				print(result)
 				if result[0] == True:
 					job_remaining = job_remaining - 1
 					results[i] = result[1]
@@ -203,8 +225,13 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 		for i in range(0, len(seg_job)):
 			if threads[i] is not None:
 				pass
+		
 		time.sleep(20)
+		if time.time() - start_time > 90:
+			break
 
+
+	return results
 
 
 
@@ -253,54 +280,13 @@ def initiate(main_port, tracker_addr, uname, pwd):
 		os.system(command)
 	else:
 		initiate(main_port, tracker_addr, uname, pwd)
+
+	results = initiate2(main_port, tracker_addr, uname, pwd, modpath)
 	sock = create_sock()
-	sock.connect
-	initiate2(main_port, tracker_addr, uname, pwd, modpath)
-	# sock = create_sock(main_port)
-	# sock.setblocking(0)
-	# sendsock = create_sock()
-	# readlist = [ sock ]
-	# writelist = [ sendsock ]
-	# dict_of_addr = {}
-	# sock.listen(10)
-	# print("after listening")
-	# while True:
-	# 	print("Entering loop")
-	# 	readlist, writelist, exceptlist = select.select(readlist, writelist, [], 0.7)
-	# 	for rsock in readlist:
-	# 		if rsock is sock:
-	# 			try:
-	# 				print("Listening for incoming....")
-	# 				newsock, newaddr = rsock.accept()
-	# 				newsock.setblocking(0)
-	# 				readlist.append(newsock)
-	# 				dict_of_addr[newsock] = newaddr
-	# 			except BlockingIOError:
-	# 				pass
-	# 		else:
-	# 			msg = rsock.recv(1024)
-	# 			if msg:
-	# 				print(pickle.loads(msg))
-	# 				readlist.remove(sock)
-	# 				del dict_of_addr[sock]
-	# 			else:
-	# 				if sock in readlist:
-	# 					readlist.remove(sock)
-	# 				elif sock in writelist:
-	# 					writelist.remove(sock)
-	# 	for wsock in writelist:
-	# 		print("Entering send section")
-	# 		if peerlist:
-	# 			pk, pv = peerlist.popitem()
-	# 			if pk != uname:
-	# 				try:
-	# 					wsock.connect((pv["ip"], pv["port"]))
-	# 					wsock.send(pickle.dumps({"cat" : "request"}))
-	# 					#wsock.close()
-	# 				except BlockingIOError:
-	# 					pass
-	#threading.Thread(target = initiate_sender, args = (main_port, tracker_addr, uname, pwd, peerlist), daemon = True).start()
-	#time.sleep(10)
+	sock.connect(("127.0.0.1", 54321))
+	sock.send(pickle.dumps(results))
+	sock.close()
+	
 
 
 def setup():
