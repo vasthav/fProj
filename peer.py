@@ -108,19 +108,16 @@ def volunteer(main_port, tracker_addr, uname, pwd):
 
 		data = pickle.loads(r)
 		modpath = data["module"]
-		choice = input("Do you want to participate? y/n, any other key to go back")
+		choice = input("Do you want to participate? y/n, any other key to go back : ")
 		if choice == "y":
 			nsock.send(pickle.dumps("yes"))
 			
-			print("Creating 2nd sock")
 			sock = create_sock(main_port)
 			sock.listen(4)
 			nsock, naddr = sock.accept()
-			r = nsock.recv(1024)
-			print("printing something")
+			r = transfer.receiver(nsock)
 			print(pickle.loads(r))
 			sock.close()
-			print("Creating mod sock and calling thread")
 			command = "python3 " + modpath + " solve"
 			t = threading.Thread(target = caller, args = (command, ), daemon = True)
 			t.start()
@@ -129,22 +126,21 @@ def volunteer(main_port, tracker_addr, uname, pwd):
 			print("Sending data to module")
 			msock = create_sock(main_port)
 			msock.connect(("127.0.0.1", 54321))
-			msock.send(r)
+			transfer.sender(msock, r)
 			msock.close()
 
 			print("waiting for data from module..")
 			msock = create_sock(main_port)
 			msock.listen(5)
 			newmsock, newmaddr = msock.accept()
-			r = newmsock.recv(1024)
+			r = transfer.receiver(newmsock)
 			newmsock.close()
 			msock.close()
 
 			t.join()
-			print("After t join")
 
 
-			nsock.send(pickle.dumps({"content" : r}))
+			transfer.sender(nsock, pickle.dumps({"content" : r}))
 			nsock.close()
 		elif choice == "n":
 			nsock.send(pickle.dumps("no"))
@@ -190,17 +186,24 @@ def peer_ready(peer, modpath):
 
 		
 
-def initiate2(main_port, tracker_addr, uname, pwd, modpath):
-	seg_job = [[1, 2], [3, 4], [5, 6], [7, 8]]
-	job_status = [False, False, False, False]
+def initiate2(main_port, tracker_addr, uname, pwd, modpath, data):
+	seg_job = data
+	print("len of seg_job", len(seg_job))
+ # 0 unassinged
+ # 1 assigned
+ # 2 completed
+	job_status = [0 for x in range(0, len(seg_job))]
 	job_remaining = len(seg_job)
 
 	results = [None for x in range(0, len(seg_job))]
 	assigned = {}
 
 	q = queue.Queue()
+	threads = {}
 	
 	start_time = time.time()
+
+
 	while True:
 		threads = [None for x in range(0, len(seg_job))]
 		sock = create_sock(main_port)
@@ -213,7 +216,8 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 			break
 
 		for i in range(0, len(seg_job)):
-			if job_status[i] == False:
+			if job_status[i] == 0:
+				job_status[i] = 1
 				peer_found = False
 				# if uname in peerlist:
 				try:
@@ -229,6 +233,8 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 								peer_found = True
 								assigned[i] = peer
 								i = i + 1
+								if i == len(seg_job):
+									break
 
 				if not peer_found:
 					break
@@ -238,14 +244,15 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 			if threads[i] is not None:
 				threads[i].join()
 				result = q.get()
-				print(q)
 				ans = result[1]
 				print(pickle.loads(ans))
 				if result[0] == True:
 					job_remaining = job_remaining - 1
 					results[i] =pickle.loads(ans)
-					job_status[i] = True
+					job_status[i] = 2
 					del assigned[i]
+				else:
+					job_status[i] = 0
 
 
 		#If there are no threads to wait for, itmeans that no jobs were sent successfully.
@@ -275,9 +282,8 @@ def solve_job (host, job, q):
 	# response = pickle.loads(r)
 
 	# sending job
-	sock.send(pickle.dumps(job))
-	r = sock.recv(1024)
-	response = pickle.loads(r)
+	transfer.sender(sock, pickle.dumps(job))
+	response = pickle.loads(transfer.receiver(sock))
 	if response["content"] == False:
 		ret = [False, None]
 	else:
@@ -312,15 +318,15 @@ def initiate(main_port, tracker_addr, uname, pwd):
 	sock = create_sock(main_port)
 	sock.connect(("127.0.0.1", 54321))
 	sock.send(pickle.dumps("data"))
-	data = pickle.loads(sock.recv(1024))
+	data = pickle.loads(transfer.receiver(sock))
 	sock.close()
 	print("Data received : ")
 	print(data)
 
-	results = initiate2(main_port, tracker_addr, uname, pwd, modpath)
+	results = initiate2(main_port, tracker_addr, uname, pwd, modpath, data)
 	sock = create_sock()
 	sock.connect(("127.0.0.1", 54321))
-	sock.send(pickle.dumps(results))
+	transfer.sender(sock, pickle.dumps(results))
 	sock.close()
 	
 
