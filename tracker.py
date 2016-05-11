@@ -139,6 +139,8 @@ def process(msg, sock, addr):
 		elif content["item"] == "modulelist":
 			update_modulelist(content["uname"], content["pwd"], content["list"])
 
+	sock.close()
+
 
 def listupdater(interval):
 	peerlist = filereader("peerlist")

@@ -100,45 +100,65 @@ def volunteer(main_port, tracker_addr, uname, pwd):
 	while True:
 		sock = create_sock(main_port)
 		sock.listen(4)
+		print("Listening")
 		nsock, naddr = sock.accept()
-
+		sock.close()
+		print(naddr)
 		r = nsock.recv(1024)
-		print(pickle.loads(r))
 
+		data = pickle.loads(r)
+		modpath = data["module"]
 		choice = input("Do you want to participate? y/n, any other key to go back")
 		if choice == "y":
-			s = nsock.send(pickle.dumps("yes"))
-			print("s: ", s)
-			nsock.close()
-			sock.close()
-
+			nsock.send(pickle.dumps("yes"))
+			
+			print("Creating 2nd sock")
 			sock = create_sock(main_port)
 			sock.listen(4)
 			nsock, naddr = sock.accept()
 			r = nsock.recv(1024)
+			print("printing something")
 			print(pickle.loads(r))
+			sock.close()
+			print("Creating mod sock and calling thread")
+			command = "python3 " + modpath + " solve"
+			t = threading.Thread(target = caller, args = (command, ), daemon = True)
+			t.start()
+			time.sleep(3)
 
-			msock = create_sock()
+			print("Sending data to module")
+			msock = create_sock(main_port)
 			msock.connect(("127.0.0.1", 54321))
-			msock.send(pickle.dumps(r))
+			msock.send(r)
 			msock.close()
 
-			msock = create_sock()
-			msock.listen()
-			newmsock = msock.accept()
+			print("waiting for data from module..")
+			msock = create_sock(main_port)
+			msock.listen(5)
+			newmsock, newmaddr = msock.accept()
 			r = newmsock.recv(1024)
+			newmsock.close()
+			msock.close()
+
+			t.join()
+			print("After t join")
 
 
-			nsock.send(pickle.dumps(r))
+			nsock.send(pickle.dumps({"content" : r}))
 			nsock.close()
-			sock.close()
 		elif choice == "n":
 			nsock.send(pickle.dumps("no"))
 			nsock.close()
-			sock.close()
 			continue
 		else:
 			break
+		# 	print("End of loop")
+		# # opt = input("Do you want to continue volunteering? ")
+		# # if opt == "y":
+		# # 	continue
+		# else:
+		# 	break
+
 	
 
 # def initiate_sender(main_port, tracker_addr, uname, pwd, peerlist):
@@ -150,10 +170,11 @@ def volunteer(main_port, tracker_addr, uname, pwd):
 # 		sock.sender(pickle.dumps({"cat": "request"}))
 
 
-def peer_ready(peer):
+def peer_ready(peer, modpath):
+	print(peer)
 	sock = create_sock()
 	sock.connect((peer["ip"], peer["port"]))
-	sock.send(pickle.dumps({"cat" : "request"}))
+	sock.send(pickle.dumps({"cat" : "request", "module" : modpath}))
 	
 	r = sock.recv(1024)
 	sock.close()
@@ -172,10 +193,10 @@ def peer_ready(peer):
 def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 	seg_job = [[1, 2], [3, 4], [5, 6], [7, 8]]
 	job_status = [False, False, False, False]
-	job_remaining = 4
+	job_remaining = len(seg_job)
 
 	results = [None for x in range(0, len(seg_job))]
-	assigned = []
+	assigned = {}
 
 	q = queue.Queue()
 	
@@ -200,12 +221,14 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 				except:
 					pass
 				for peer in peerlist:
-					if peer not in assigned:
-						if peer_ready(peerlist[peer]) == True:
-							threads[i] = threading.Thread(target = solve_job, args = (peerlist[peer], seg_job[i], q), daemon = True)
-							threads[i].start()
-							peer_found = True
-							assigned.append(peer)
+					if peerlist[peer]["status"] == "online":
+						if peer not in assigned.values():
+							if peer_ready(peerlist[peer], modpath) == True:
+								threads[i] = threading.Thread(target = solve_job, args = (peerlist[peer], seg_job[i], q), daemon = True)
+								threads[i].start()
+								peer_found = True
+								assigned[i] = peer
+								i = i + 1
 
 				if not peer_found:
 					break
@@ -215,18 +238,24 @@ def initiate2(main_port, tracker_addr, uname, pwd, modpath):
 			if threads[i] is not None:
 				threads[i].join()
 				result = q.get()
-				print(result)
+				print(q)
+				ans = result[1]
+				print(pickle.loads(ans))
 				if result[0] == True:
 					job_remaining = job_remaining - 1
-					results[i] = result[1]
+					results[i] =pickle.loads(ans)
+					job_status[i] = True
+					del assigned[i]
 
-		#If there are no threads to wait for, it means that no jobs were sent successfully.
+
+		#If there are no threads to wait for, itmeans that no jobs were sent successfully.
 		#Wait for a random amount of time so that someone may come online.
+
 		for i in range(0, len(seg_job)):
 			if threads[i] is not None:
 				pass
 		
-		time.sleep(20)
+		time.sleep(5)
 		if time.time() - start_time > 90:
 			break
 
@@ -252,7 +281,7 @@ def solve_job (host, job, q):
 	if response["content"] == False:
 		ret = [False, None]
 	else:
-		ret = [True, response["result"]]
+		ret = [True, response["content"]]
 	# sock.send(pickle.dumps(job))
 	# r = sock.recv(1024)
 	# result = pickle.loads(r)
@@ -261,9 +290,8 @@ def solve_job (host, job, q):
 	return ret
 
 
-
-
-
+def caller(command):
+	os.system(command)
 
 
 def initiate(main_port, tracker_addr, uname, pwd):
@@ -277,9 +305,17 @@ def initiate(main_port, tracker_addr, uname, pwd):
 	modpath = input("Enter path of module : ")
 	if os.path.isfile(modpath) == True:
 		command = "python3 " + modpath + " initiate"
-		os.system(command)
+		threading.Thread(target = caller, args = (command, ), daemon = True).start()
 	else:
 		initiate(main_port, tracker_addr, uname, pwd)
+	time.sleep(3)
+	sock = create_sock(main_port)
+	sock.connect(("127.0.0.1", 54321))
+	sock.send(pickle.dumps("data"))
+	data = pickle.loads(sock.recv(1024))
+	sock.close()
+	print("Data received : ")
+	print(data)
 
 	results = initiate2(main_port, tracker_addr, uname, pwd, modpath)
 	sock = create_sock()
