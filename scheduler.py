@@ -1,41 +1,40 @@
+import time
+
+
 class Scheduler:
-	unassigned = []
-	volunteers = []
-	assigned = {}
-	timeout = None
-	start_time = None
+    unassigned = []
+    volunteers = []
+    assigned = {}
+    timeout = None
+    start_time = None
+    completed = []
 
+    def __init__(self, list_of_jobs, list_of_volunteers, timeout=None):
+        self.unassigned = list_of_jobs
+        self.volunteers = list_of_volunteers
+        self.timeout = timeout
 
-	def __init__(self, list_of_jobs, list_of_volunteers, timeout = None):
-		self.unassigned = list_of_jobs
-		self.volunteers = list_of_volunteers
-		self.timeout = timeout
+    def assign(self):
+        while (len(self.volunteers) != 0) and (len(self.unassigned) != 0):
+            self.assigned[self.unassigned[0]] = self.volunteers[0]
+            del self.unassigned[0]
+            del self.volunteers[0]
+        return self.assigned, self.unassigned
 
+    def set_start_time(self):
+        self.start_time = time.time()
 
-	def assign(self):
-		while (len(self.volunteers) != 0) and (len(self.unassigned) != 0):
-			self.assigned[self.unassigned[0]] = self.volunteers[0]
-			del self.unassigned[0]
-			del self.volunteers[0]
-		return self.assigned, self.unassigned
+    def poll_jobs(self):
+        if (time.time() - self.start_time) > self.timeout:
+            while (len(self.assigned)) != 0:
+                job, volunteer = self.assigned.popitem()
+                self.unassigned.append(job)
+        return self.unassigned
 
-
-	def set_start_time(self):
-		self.start_time = time.time()
-
-
-	def poll_jobs(self):
-		if (time.time() - self.start_time) > self.timeout:
-			while (len(self.assigned)) != 0:
-				job, volunteer = self.assigned.popitem()
-				self.unassigned.append(job)
-		return self.unassigned
-
-
-	def add_to_completed(self, job):
-		if job in self.assigned:
-			self.completed.append(job)
-			del self.assigned[job]
+    def add_to_completed(self, job):
+        if job in self.assigned:
+            self.completed.append(job)
+            del self.assigned[job]
 
 
 # here job stands for job id
